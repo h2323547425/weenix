@@ -179,6 +179,7 @@ static void *initproc_run(long arg1, void *arg2)
 void initproc_start()
 {
     NOT_YET_IMPLEMENTED("PROCS: initproc_start");
+    proc_t *init_proc = proc_create(curproc->p_name);
 }
 
 void initproc_finish()
