@@ -79,7 +79,7 @@ kthread_t *kthread_create(proc_t *proc, kthread_func_t func, long arg1,
     context_setup(&new_thr->kt_ctx, func, arg1, arg2, new_thr->kt_kstack, DEFAULT_STACK_SIZE, curproc->p_pml4);
     new_thr->kt_retval = NULL;
     new_thr->kt_errno = 0;
-    new_thr->kt_proc = curproc;
+    new_thr->kt_proc = proc;
     new_thr->kt_cancelled = 0;
     sched_queue_init(new_thr->kt_wchan);
     new_thr->kt_state = KT_NO_STATE;
@@ -90,7 +90,7 @@ kthread_t *kthread_create(proc_t *proc, kthread_func_t func, long arg1,
     new_thr->kt_recent_core = ~0UL;
     new_thr->kt_preemption_count = 0;
 
-    list_insert_tail(&curproc->p_threads, &new_thr->kt_plink);
+    list_insert_tail(&proc->p_threads, &new_thr->kt_plink);
     return new_thr;
 }
 
