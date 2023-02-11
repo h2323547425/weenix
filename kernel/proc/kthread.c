@@ -76,7 +76,7 @@ kthread_t *kthread_create(proc_t *proc, kthread_func_t func, long arg1,
     if ((new_thr->kt_kstack = alloc_stack()) == NULL) {
         return NULL;
     }
-    context_setup(&new_thr->kt_ctx, func, arg1, arg2, new_thr->kt_kstack, DEFAULT_STACK_SIZE, curproc->p_pml4);
+    context_setup(&new_thr->kt_ctx, func, arg1, arg2, new_thr->kt_kstack, DEFAULT_STACK_SIZE, proc->p_pml4);
     new_thr->kt_retval = NULL;
     new_thr->kt_errno = 0;
     new_thr->kt_proc = proc;
