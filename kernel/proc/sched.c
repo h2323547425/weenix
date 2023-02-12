@@ -184,7 +184,7 @@ void sched_cancel(kthread_t *thr)
     // NOT_YET_IMPLEMENTED("PROCS: sched_cancel");
     thr->kt_cancelled = 1;
     if (thr->kt_state == KT_SLEEP_CANCELLABLE) {
-        ktqueue_remove(&thr->kt_wchan, thr);
+        ktqueue_remove(thr->kt_wchan, thr);
         sched_make_runnable(thr);
     }
 }
@@ -219,7 +219,15 @@ void sched_cancel(kthread_t *thr)
  */
 void sched_switch(ktqueue_t *queue, spinlock_t *s)
 {
-    NOT_YET_IMPLEMENTED("PROCS: sched_switch");
+    // NOT_YET_IMPLEMENTED("PROCS: sched_switch");
+    intr_disable();
+    int oldIPL = intr_setipl(IPL_LOW);
+    KASSERT(curthr->kt_state != KT_ON_CPU && "curthr state must NOT be KT_ON_CPU upon entry.");
+    curcore.kc_queue = queue;
+    ktqueue_enqueue(queue, curthr);
+    context_switch(&curthr->kt_ctx, &curcore.kc_ctx);
+    inter_setipl(oldIPL);
+    intr_enable();
 }
 
 /*
@@ -270,7 +278,11 @@ void sched_make_runnable(kthread_t *thr)
  */
 void sched_sleep_on(ktqueue_t *q, spinlock_t *lock)
 {
-    NOT_YET_IMPLEMENTED("PROCS: sched_sleep_on");
+    // NOT_YET_IMPLEMENTED("PROCS: sched_sleep_on");
+    int oldIPL = intr_setipl(IPL_HIGH);
+    curthr->kt_state = KT_SLEEP;
+    sched_switch(q, lock);
+    intr_setipl(oldIPL);
 }
 
 /*
@@ -286,7 +298,13 @@ void sched_sleep_on(ktqueue_t *q, spinlock_t *lock)
  */
 void sched_wakeup_on(ktqueue_t *q, kthread_t **ktp)
 {
-    NOT_YET_IMPLEMENTED("PROCS: sched_wakeup_on");
+    // NOT_YET_IMPLEMENTED("PROCS: sched_wakeup_on");
+    kthread_t *thr = ktqueue_dequeue(q);
+    if (thr == NULL) {
+        return;
+    }
+    *ktp = thr;
+    sched_make_runnable(thr);
 }
 
 /*
@@ -294,7 +312,10 @@ void sched_wakeup_on(ktqueue_t *q, kthread_t **ktp)
  */
 void sched_broadcast_on(ktqueue_t *q)
 {
-    NOT_YET_IMPLEMENTED("PROCS: sched_broadcast_on");
+    // NOT_YET_IMPLEMENTED("PROCS: sched_broadcast_on");
+    while (!sched_queue_empty(q)) {
+        sched_wakeup_on(q, NULL);
+    }
 }
 
 /*===============
