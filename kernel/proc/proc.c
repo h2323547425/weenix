@@ -288,7 +288,10 @@ void proc_thread_exiting(void *retval)
  */
 void proc_kill(proc_t *proc, long status)
 {
-    NOT_YET_IMPLEMENTED("PROCS: proc_kill");
+    // NOT_YET_IMPLEMENTED("PROCS: proc_kill");
+    list_iterate(&proc->p_threads, thr, kthread_t, kt_plink) {
+        kthread_cancel(thr, (void *) status);
+    }
 }
 
 /*
@@ -302,7 +305,13 @@ void proc_kill(proc_t *proc, long status)
  */
 void proc_kill_all()
 {
-    NOT_YET_IMPLEMENTED("PROCS: proc_kill_all");
+    // NOT_YET_IMPLEMENTED("PROCS: proc_kill_all");
+    list_iterate(&proc_list, proc, proc_t, p_list_link) {
+        if (proc->p_pid != curproc->p_pid && proc->p_pid != PID_IDLE && proc->p_pid != PID_INIT) {
+            proc_kill(proc, -1);
+        }
+    }
+    do_exit(-1);
 }
 
 /*
@@ -388,7 +397,7 @@ pid_t do_waitpid(pid_t pid, int *status, int options)
 void do_exit(long status)
 {
     // NOT_YET_IMPLEMENTED("PROCS: do_exit");
-    kthread_exit(status);
+    kthread_exit((void *) status);
 }
 
 /*==========
