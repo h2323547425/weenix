@@ -81,7 +81,7 @@ kthread_t *kthread_create(proc_t *proc, kthread_func_t func, long arg1,
     new_thr->kt_errno = 0;
     new_thr->kt_proc = proc;
     new_thr->kt_cancelled = 0;
-    sched_queue_init(new_thr->kt_wchan);
+    new_thr->kt_wchan = NULL;
     new_thr->kt_state = KT_NO_STATE;
     spinlock_init(&new_thr->kt_lock);
     list_link_init(&new_thr->kt_plink);
