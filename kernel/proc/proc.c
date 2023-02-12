@@ -218,7 +218,7 @@ proc_t *proc_create(const char *name)
     proc->p_cwd = NULL;
 
     if (proc->p_pid == PID_INIT) {
-        *proc_initproc = *proc;
+        proc_initproc = proc;
     }
 
     return proc;
