@@ -185,8 +185,43 @@ proc_t *proc_lookup(pid_t pid)
  */
 proc_t *proc_create(const char *name)
 {
-    NOT_YET_IMPLEMENTED("PROCS: proc_create");
-    return NULL;
+    // NOT_YET_IMPLEMENTED("PROCS: proc_create");
+    pid_t pid = _proc_getid();
+    if (pid < 0) {
+        return NULL;
+    }
+    proc_t *proc = (proc_t *) slab_obj_alloc(proc_allocator);
+    if (proc == NULL) {
+        return NULL;
+    }
+    proc->p_pid = pid;
+
+    strncpy(proc->p_name, name, PROC_NAME_LEN);
+    proc->p_name[PROC_NAME_LEN - 1] = '\0';
+
+    list_init(&proc->p_threads);
+    list_init(&proc->p_children);
+    spinlock_init(&proc->p_children_lock);
+
+    proc->p_pproc = curproc;
+
+    list_link_init(&proc->p_child_link);
+    list_link_init(&proc->p_list_link);
+
+    proc->p_status = 0;
+    proc->p_state = PROC_RUNNING;
+    
+    proc->p_pml4 = pt_create();
+    memset(&proc->p_wait, 0, sizeof(ktqueue_t));
+
+    memset(proc->p_files, 0, sizeof(proc->p_files));
+    proc->p_cwd = NULL;
+
+    if (proc->p_pid == PID_INIT) {
+        *proc_initproc = *proc;
+    }
+
+    return proc;
 }
 
 /*
@@ -208,7 +243,18 @@ proc_t *proc_create(const char *name)
  */
 void proc_cleanup(long status)
 {
-    NOT_YET_IMPLEMENTED("PROCS: proc_cleanup");
+    // NOT_YET_IMPLEMENTED("PROCS: proc_cleanup");
+    curproc->p_state = PROC_DEAD;
+    curproc->p_status = status;
+
+    if (curproc->p_pid == PID_INIT) {
+        initproc_finish();
+    } else {
+        list_iterate(&curproc->p_children, child, proc_t, p_child_link) {
+            list_remove(&child->p_child_link);
+            list_insert_tail(&proc_initproc->p_children, &child->p_child_link);
+        }
+    }
 }
 
 /*
@@ -226,7 +272,12 @@ void proc_cleanup(long status)
  */
 void proc_thread_exiting(void *retval)
 {
-    NOT_YET_IMPLEMENTED("PROCS: proc_thread_exiting");
+    // NOT_YET_IMPLEMENTED("PROCS: proc_thread_exiting");
+    proc_cleanup((long) retval);
+    curthr->kt_retval = retval;
+    curthr->kt_state = KT_EXITED;
+    sched_broadcast_on(&curproc->p_pproc->p_wait);
+    sched_switch(NULL, NULL);
 }
 
 /*
@@ -336,7 +387,8 @@ pid_t do_waitpid(pid_t pid, int *status, int options)
  */
 void do_exit(long status)
 {
-    NOT_YET_IMPLEMENTED("PROCS: do_exit");
+    // NOT_YET_IMPLEMENTED("PROCS: do_exit");
+    kthread_exit(status);
 }
 
 /*==========
