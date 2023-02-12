@@ -226,7 +226,7 @@ void sched_switch(ktqueue_t *queue, spinlock_t *s)
     curcore.kc_queue = queue;
     ktqueue_enqueue(queue, curthr);
     context_switch(&curthr->kt_ctx, &curcore.kc_ctx);
-    inter_setipl(oldIPL);
+    intr_setipl(oldIPL);
     intr_enable();
 }
 
