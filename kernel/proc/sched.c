@@ -163,7 +163,13 @@ void sched_init(void)
  */
 long sched_cancellable_sleep_on(ktqueue_t *queue, spinlock_t *lock)
 {
-    NOT_YET_IMPLEMENTED("PROCS: sched_cancellable_sleep_on");
+    // NOT_YET_IMPLEMENTED("PROCS: sched_cancellable_sleep_on");
+    if (curthr->kt_cancelled) {
+        return -EINTR;
+    }
+    curthr->kt_state = KT_SLEEP_CANCELLABLE;
+    sched_switch(queue, lock);
+
     return 0;
 }
 
@@ -175,7 +181,12 @@ long sched_cancellable_sleep_on(ktqueue_t *queue, spinlock_t *lock)
  */
 void sched_cancel(kthread_t *thr)
 {
-    NOT_YET_IMPLEMENTED("PROCS: sched_cancel");
+    // NOT_YET_IMPLEMENTED("PROCS: sched_cancel");
+    thr->kt_cancelled = 1;
+    if (thr->kt_state == KT_SLEEP_CANCELLABLE) {
+        ktqueue_remove(&thr->kt_wchan, thr);
+        sched_make_runnable(thr);
+    }
 }
 
 /*
@@ -206,7 +217,7 @@ void sched_cancel(kthread_t *thr)
  * last_thread_context to the context of the current thread here before the call
  * to context_switch.
  */
-void sched_switch(ktqueue_t *queue, spinlock_t *lock)
+void sched_switch(ktqueue_t *queue, spinlock_t *s)
 {
     NOT_YET_IMPLEMENTED("PROCS: sched_switch");
 }
@@ -236,7 +247,11 @@ void sched_yield()
  */
 void sched_make_runnable(kthread_t *thr)
 {
-    NOT_YET_IMPLEMENTED("PROCS: sched_make_runnable");
+    // NOT_YET_IMPLEMENTED("PROCS: sched_make_runnable");
+    int oldIPL = intr_setipl(IPL_HIGH);
+    thr->kt_state = KT_RUNNABLE;
+    ktqueue_enqueue(&kt_runq, thr);
+    intr_setipl(oldIPL);
 }
 
 /*

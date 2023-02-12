@@ -408,7 +408,7 @@ pid_t do_waitpid(pid_t pid, int *status, int options)
     }
     iterate:
     list_iterate(&curproc->p_children, child, proc_t, p_child_link) {
-        if (child->p_state = PROC_DEAD) {
+        if (child->p_state == PROC_DEAD) {
             pid_t child_pid = child->p_pid;
             *status = child->p_status;
             list_remove(&child->p_child_link);
