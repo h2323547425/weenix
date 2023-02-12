@@ -387,8 +387,37 @@ void proc_destroy(proc_t *proc)
  */
 pid_t do_waitpid(pid_t pid, int *status, int options)
 {
-    NOT_YET_IMPLEMENTED("PROCS: do_waitpid");
-    return 0;
+    // NOT_YET_IMPLEMENTED("PROCS: do_waitpid");
+    if (pid == 0 || pid < -1 || options) {
+        return -ENOTSUP;
+    }
+
+    if (pid > 0) {
+        list_iterate(&curproc->p_children, child, proc_t, p_child_link) {
+            if (child->p_pid == pid) {
+                while (child->p_state != PROC_DEAD) {
+                    sched_sleep_on(&curproc->p_wait, &curproc->p_wait.tq_lock);
+                }
+                *status = child->p_status;
+                list_remove(&child->p_child_link);
+                proc_destroy(child);
+                return pid;
+            }
+        }
+        return -ECHILD;
+    }
+    iterate:
+    list_iterate(&curproc->p_children, child, proc_t, p_child_link) {
+        if (child->p_state = PROC_DEAD) {
+            pid_t child_pid = child->p_pid;
+            *status = child->p_status;
+            list_remove(&child->p_child_link);
+            proc_destroy(child);
+            return child_pid;
+        }
+    }
+    sched_sleep_on(&curproc->p_wait, &curproc->p_wait.tq_lock);
+    goto iterate;
 }
 
 /*
