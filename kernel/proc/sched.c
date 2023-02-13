@@ -224,7 +224,7 @@ void sched_switch(ktqueue_t *queue, spinlock_t *s)
     int oldIPL = intr_setipl(IPL_LOW);
     KASSERT(curthr->kt_state != KT_ON_CPU && "curthr state must NOT be KT_ON_CPU upon entry.");
     curcore.kc_queue = queue;
-    ktqueue_enqueue(queue, curthr);
+    curcore.kc_lock = s;
     context_switch(&curthr->kt_ctx, &curcore.kc_ctx);
     intr_setipl(oldIPL);
     intr_enable();
@@ -299,12 +299,16 @@ void sched_sleep_on(ktqueue_t *q, spinlock_t *lock)
 void sched_wakeup_on(ktqueue_t *q, kthread_t **ktp)
 {
     // NOT_YET_IMPLEMENTED("PROCS: sched_wakeup_on");
+    int oldIPL = intr_setipl(IPL_HIGH);
     kthread_t *thr = ktqueue_dequeue(q);
     if (thr == NULL) {
         return;
     }
-    *ktp = thr;
+    if (ktp != NULL) {
+        *ktp = thr;
+    }
     sched_make_runnable(thr);
+    intr_setipl(oldIPL);
 }
 
 /*
@@ -313,9 +317,11 @@ void sched_wakeup_on(ktqueue_t *q, kthread_t **ktp)
 void sched_broadcast_on(ktqueue_t *q)
 {
     // NOT_YET_IMPLEMENTED("PROCS: sched_broadcast_on");
+    int oldIPL = intr_setipl(IPL_HIGH);
     while (!sched_queue_empty(q)) {
         sched_wakeup_on(q, NULL);
     }
+    intr_setipl(oldIPL);
 }
 
 /*===============

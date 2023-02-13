@@ -212,14 +212,16 @@ proc_t *proc_create(const char *name)
     proc->p_state = PROC_RUNNING;
     
     proc->p_pml4 = pt_create();
-    memset(&proc->p_wait, 0, sizeof(ktqueue_t));
+    sched_queue_init(&proc->p_wait);
 
-    memset(proc->p_files, 0, sizeof(proc->p_files));
     proc->p_cwd = NULL;
 
     if (proc->p_pid == PID_INIT) {
         proc_initproc = proc;
     }
+
+    list_insert_tail(&curproc->p_children, &proc->p_child_link);
+    list_insert_tail(&proc_list, &proc->p_list_link);
 
     return proc;
 }
@@ -404,6 +406,9 @@ pid_t do_waitpid(pid_t pid, int *status, int options)
                 return pid;
             }
         }
+        return -ECHILD;
+    }
+    if (list_empty(&curproc->p_children)) {
         return -ECHILD;
     }
     iterate:
