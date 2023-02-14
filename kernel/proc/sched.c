@@ -184,7 +184,7 @@ void sched_cancel(kthread_t *thr)
     // NOT_YET_IMPLEMENTED("PROCS: sched_cancel");
     thr->kt_cancelled = 1;
     if (thr->kt_state == KT_SLEEP_CANCELLABLE) {
-        ktqueue_remove(thr->kt_wchan, thr);
+        ktqueue_remove(&curproc->p_wait, thr);
         sched_make_runnable(thr);
     }
 }
