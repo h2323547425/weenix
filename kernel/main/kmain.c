@@ -157,12 +157,29 @@ static void make_devices()
 static void *initproc_run(long arg1, void *arg2)
 {
     proctest_main(arg1, arg2);
+
 #ifdef __VFS__
     dbg(DBG_INIT, "Initializing VFS...\n");
     vfs_init();
     make_devices();
 #endif
     return NULL;
+
+    /* To create a kshell on each terminal */
+#ifdef __DRIVERS__
+    char name[32] = {0};
+    for (long i = 0; i < __NTERMS__; i++)
+    {
+        snprintf(name, sizeof(name), "kshell%ld", i);
+        proc_t *proc = proc_create("ksh");
+        kthread_t *thread = kthread_create(proc, kshell_proc_run, i, NULL);
+        sched_make_runnable(thread);
+    }
+#endif
+    int status;
+    /* Run kshell commands until each kshell process exits */
+    while (do_waitpid(-1, &status, 0) != -ECHILD)
+            ;
 }
 
 /*
