@@ -16,7 +16,13 @@
  */
 void ldisc_init(ldisc_t *ldisc)
 {
-    NOT_YET_IMPLEMENTED("DRIVERS: ldisc_init");
+    // NOT_YET_IMPLEMENTED("DRIVERS: ldisc_init");
+    ldisc->ldisc_cooked = 0;
+    ldisc->ldisc_tail = 0;
+    ldisc->ldisc_head = 0;
+    ldisc->ldisc_full = 0;
+    sched_queue_init(&ldisc->ldisc_read_queue);
+    memset(ldisc->ldisc_buffer, 0, LDISC_BUFFER_SIZE);
 }
 
 /**
