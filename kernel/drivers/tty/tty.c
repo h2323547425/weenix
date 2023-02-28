@@ -98,8 +98,14 @@ ssize_t tty_read(chardev_t *cdev, size_t pos, void *buf, size_t count)
  */
 ssize_t tty_write(chardev_t *cdev, size_t pos, const void *buf, size_t count)
 {
-    NOT_YET_IMPLEMENTED("DRIVERS: tty_write");
-    return -1;
+    // NOT_YET_IMPLEMENTED("DRIVERS: tty_write");
+    int oldIPL = intr_setipl(INTR_KEYBOARD);
+    tty_t *tty = cd_to_tty(cdev);
+    kmutex_lock(&tty->tty_write_mutex);
+    int write_count = vterminal_write(&tty->tty_vterminal, buf, count);
+    kmutex_unlock(&tty->tty_write_mutex);
+    intr_setipl(oldIPL);
+    return write_count;
 }
 
 static void tty_receive_char_multiplexer(uint8_t c)
