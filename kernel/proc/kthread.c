@@ -68,7 +68,6 @@ void kthread_init()
 kthread_t *kthread_create(proc_t *proc, kthread_func_t func, long arg1,
                           void *arg2)
 {
-    // NOT_YET_IMPLEMENTED("PROCS: kthread_create");
     kthread_t *new_thr = (kthread_t *) slab_obj_alloc(kthread_allocator);
     if (new_thr == NULL) {
         return NULL;
@@ -148,7 +147,6 @@ void kthread_destroy(kthread_t *thr)
  */
 void kthread_cancel(kthread_t *thr, void *retval)
 {
-    // NOT_YET_IMPLEMENTED("PROCS: kthread_cancel");
     thr->kt_retval = retval;
     sched_cancel(thr);
 }
@@ -158,6 +156,5 @@ void kthread_cancel(kthread_t *thr, void *retval)
  */
 void kthread_exit(void *retval)
 {
-    // NOT_YET_IMPLEMENTED("PROCS: kthread_exit");
     proc_thread_exiting(retval);
 }

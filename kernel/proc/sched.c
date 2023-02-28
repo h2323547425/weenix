@@ -163,7 +163,6 @@ void sched_init(void)
  */
 long sched_cancellable_sleep_on(ktqueue_t *queue, spinlock_t *lock)
 {
-    // NOT_YET_IMPLEMENTED("PROCS: sched_cancellable_sleep_on");
     if (curthr->kt_cancelled) {
         return -EINTR;
     }
@@ -181,7 +180,6 @@ long sched_cancellable_sleep_on(ktqueue_t *queue, spinlock_t *lock)
  */
 void sched_cancel(kthread_t *thr)
 {
-    // NOT_YET_IMPLEMENTED("PROCS: sched_cancel");
     thr->kt_cancelled = 1;
     if (thr->kt_state == KT_SLEEP_CANCELLABLE) {
         ktqueue_remove(&curproc->p_wait, thr);
@@ -219,7 +217,6 @@ void sched_cancel(kthread_t *thr)
  */
 void sched_switch(ktqueue_t *queue, spinlock_t *s)
 {
-    // NOT_YET_IMPLEMENTED("PROCS: sched_switch");
     intr_disable();
     int oldIPL = intr_setipl(IPL_LOW);
     KASSERT(curthr->kt_state != KT_ON_CPU && "curthr state must NOT be KT_ON_CPU upon entry.");
@@ -255,7 +252,6 @@ void sched_yield()
  */
 void sched_make_runnable(kthread_t *thr)
 {
-    // NOT_YET_IMPLEMENTED("PROCS: sched_make_runnable");
     int oldIPL = intr_setipl(IPL_HIGH);
     thr->kt_state = KT_RUNNABLE;
     ktqueue_enqueue(&kt_runq, thr);
@@ -278,7 +274,6 @@ void sched_make_runnable(kthread_t *thr)
  */
 void sched_sleep_on(ktqueue_t *q, spinlock_t *lock)
 {
-    // NOT_YET_IMPLEMENTED("PROCS: sched_sleep_on");
     int oldIPL = intr_setipl(IPL_HIGH);
     curthr->kt_state = KT_SLEEP;
     sched_switch(q, lock);
@@ -298,7 +293,6 @@ void sched_sleep_on(ktqueue_t *q, spinlock_t *lock)
  */
 void sched_wakeup_on(ktqueue_t *q, kthread_t **ktp)
 {
-    // NOT_YET_IMPLEMENTED("PROCS: sched_wakeup_on");
     int oldIPL = intr_setipl(IPL_HIGH);
     kthread_t *thr = ktqueue_dequeue(q);
     if (thr == NULL) {
@@ -316,7 +310,6 @@ void sched_wakeup_on(ktqueue_t *q, kthread_t **ktp)
  */
 void sched_broadcast_on(ktqueue_t *q)
 {
-    // NOT_YET_IMPLEMENTED("PROCS: sched_broadcast_on");
     int oldIPL = intr_setipl(IPL_HIGH);
     while (!sched_queue_empty(q)) {
         sched_wakeup_on(q, NULL);

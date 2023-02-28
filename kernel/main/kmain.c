@@ -179,7 +179,6 @@ static void *initproc_run(long arg1, void *arg2)
  */
 void initproc_start()
 {
-    // NOT_YET_IMPLEMENTED("PROCS: initproc_start");
     proc_t *init_proc = proc_create("init"+curcore.kc_id);
     kthread_t *thr = kthread_create(init_proc, initproc_run, 0, NULL);
     sched_make_runnable(thr);
