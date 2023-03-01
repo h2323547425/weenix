@@ -40,7 +40,7 @@ void ldisc_init(ldisc_t *ldisc)
 long ldisc_wait_read(ldisc_t *ldisc, spinlock_t *lock)
 {
     // NOT_YET_IMPLEMENTED("DRIVERS: ldisc_wait_read");
-    if (ldisc->ldisc_full || ldisc->ldisc_cooked != ldisc->ldisc_tailwa) {
+    if (ldisc->ldisc_full || ldisc->ldisc_cooked != ldisc->ldisc_tail) {
         return 0;
     }
     return sched_cancellable_sleep_on(&ldisc->ldisc_read_queue, lock);;
@@ -63,8 +63,30 @@ long ldisc_wait_read(ldisc_t *ldisc, spinlock_t *lock)
  */
 size_t ldisc_read(ldisc_t *ldisc, char *buf, size_t count)
 {
-    NOT_YET_IMPLEMENTED("DRIVERS: ldisc_read");
-    return 0;
+    // NOT_YET_IMPLEMENTED("DRIVERS: ldisc_read");
+    int read_count = 0;
+    for (int i = 0; i < count; i++) {
+        // break if no cooked char
+        if (ldisc->ldisc_tail == ldisc->ldisc_cooked) {
+            break;
+        }
+        // get the cooked char and increment tail
+        char c = ldisc->ldisc_buffer[ldisc->ldisc_tail];
+        ldisc->ldisc_tail = (ldisc->ldisc_tail) + 1 % LDISC_BUFFER_SIZE;
+        // if char is EOT, stop copying and break
+        if (c == EOT) {
+            break;
+        }
+        // if char is \n, increment read_count, stop copying, and break
+        if (c == '\n') {
+            read_count++;
+            break;
+        }
+        // otherwise, increment read_count and copy char
+        read_count++;
+        buf[i] = c;
+    }
+    return read_count;
 }
 
 /**
@@ -114,6 +136,8 @@ size_t ldisc_read(ldisc_t *ldisc, char *buf, size_t count)
 void ldisc_key_pressed(ldisc_t *ldisc, char c)
 {
     NOT_YET_IMPLEMENTED("DRIVERS: ldisc_key_pressed");
+
+
 }
 
 /**
