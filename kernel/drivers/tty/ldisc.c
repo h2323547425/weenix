@@ -141,7 +141,7 @@ void ldisc_key_pressed(ldisc_t *ldisc, char c)
         // delete raw
         ldisc->ldisc_head = ldisc->ldisc_cooked;
         // zero out cooked
-        int i = ldisc->ldisc_tail;
+        size_t i = ldisc->ldisc_tail;
         while (i != ldisc->ldisc_cooked) {
             ldisc->ldisc_buffer[i] = 0;
             i = (i + 1) % LDISC_BUFFER_SIZE;
