@@ -65,14 +65,14 @@ size_t ldisc_read(ldisc_t *ldisc, char *buf, size_t count)
 {
     // NOT_YET_IMPLEMENTED("DRIVERS: ldisc_read");
     int read_count = 0;
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < (int)count; i++) {
         // break if no cooked char
         if (ldisc->ldisc_tail == ldisc->ldisc_cooked) {
             break;
         }
         // get the cooked char and increment tail
         char c = ldisc->ldisc_buffer[ldisc->ldisc_tail];
-        ldisc->ldisc_tail = (ldisc->ldisc_tail) + 1 % LDISC_BUFFER_SIZE;
+        ldisc->ldisc_tail = (ldisc->ldisc_tail + 1) % LDISC_BUFFER_SIZE;
         // if char is EOT, stop copying and break
         if (c == EOT) {
             break;
@@ -135,9 +135,64 @@ size_t ldisc_read(ldisc_t *ldisc, char *buf, size_t count)
  */
 void ldisc_key_pressed(ldisc_t *ldisc, char c)
 {
-    NOT_YET_IMPLEMENTED("DRIVERS: ldisc_key_pressed");
-
-
+    // NOT_YET_IMPLEMENTED("DRIVERS: ldisc_key_pressed");
+    tty_t *tty = ldisc_to_tty(ldisc);
+    if (c == ETX) {
+        // delete raw
+        ldisc->ldisc_head = ldisc->ldisc_cooked;
+        // zero out cooked
+        int i = ldisc->ldisc_tail;
+        while (i != ldisc->ldisc_cooked) {
+            ldisc->ldisc_buffer[i] = 0;
+            i = (i + 1) % LDISC_BUFFER_SIZE;
+        }
+        // emit \n to terminal
+        vterminal_write(&tty->tty_vterminal, "\n", 1);
+        return;
+    }
+    if (c == EOT) {
+        if (!ldisc->ldisc_full) {
+            // write EOT and increment head
+            ldisc->ldisc_buffer[ldisc->ldisc_head] = EOT;
+            ldisc->ldisc_head = (ldisc->ldisc_head + 1) % LDISC_BUFFER_SIZE;
+            // cook all
+            ldisc->ldisc_cooked = ldisc->ldisc_head;
+            // wake up reading thread
+            sched_wakeup_on(&ldisc->ldisc_read_queue, NULL);
+        }
+        return;
+    }
+    if (c == '\n') {
+        if (!ldisc->ldisc_full) {
+            // write \n and increment head
+            ldisc->ldisc_buffer[ldisc->ldisc_head] = '\n';
+            ldisc->ldisc_head = (ldisc->ldisc_head + 1) % LDISC_BUFFER_SIZE;
+            // cook all
+            ldisc->ldisc_cooked = ldisc->ldisc_head;
+            // emit \n to terminal
+            vterminal_write(&tty->tty_vterminal, "\n", 1);
+            // wake up reading thread
+            sched_wakeup_on(&ldisc->ldisc_read_queue, NULL);
+        }
+        return;
+    }
+    if (c == '\b') {
+        if (ldisc->ldisc_cooked != ldisc->ldisc_head) {
+            // delete 1 char by decrementing head
+            ldisc->ldisc_head = (ldisc->ldisc_head - 1) % LDISC_BUFFER_SIZE;
+            // emit \b to terminal
+            vterminal_write(&tty->tty_vterminal, "\b", 1);
+        }
+        return;
+    }
+    // do nothing when almost full with regular char
+    if (ldisc->ldisc_full || (ldisc->ldisc_head + 1) % LDISC_BUFFER_SIZE == ldisc->ldisc_tail) {
+        return;
+    }
+    // otherwise write char and increment head
+    ldisc->ldisc_buffer[ldisc->ldisc_head] = c;
+    ldisc->ldisc_head = (ldisc->ldisc_head + 1) % LDISC_BUFFER_SIZE;
+    vterminal_key_pressed(&tty->tty_vterminal);
 }
 
 /**
