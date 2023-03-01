@@ -65,7 +65,7 @@ size_t ldisc_read(ldisc_t *ldisc, char *buf, size_t count)
 {
     // NOT_YET_IMPLEMENTED("DRIVERS: ldisc_read");
     int read_count = 0;
-    for (int i = 0; i < (int)count; i++) {
+    for (size_t i = 0; i < count; i++) {
         // break if no cooked char
         if (ldisc->ldisc_tail == ldisc->ldisc_cooked) {
             break;
@@ -204,6 +204,12 @@ void ldisc_key_pressed(ldisc_t *ldisc, char c)
  */
 size_t ldisc_get_current_line_raw(ldisc_t *ldisc, char *s)
 {
-    NOT_YET_IMPLEMENTED("DRIVERS: ldisc_get_current_line_raw");
-    return 0;
+    // NOT_YET_IMPLEMENTED("DRIVERS: ldisc_get_current_line_raw");
+    int read_count = 0;
+    size_t i = ldisc->ldisc_cooked;
+    while(i != ldisc->ldisc_head) {
+        s[read_count++] = ldisc->ldisc_buffer[i];
+        i = (i + 1) % LDISC_BUFFER_SIZE;
+    }
+    return read_count;
 }
