@@ -73,6 +73,7 @@ size_t ldisc_read(ldisc_t *ldisc, char *buf, size_t count)
         // get the cooked char and increment tail
         char c = ldisc->ldisc_buffer[ldisc->ldisc_tail];
         ldisc->ldisc_tail = (ldisc->ldisc_tail + 1) % LDISC_BUFFER_SIZE;
+        ldisc->ldisc_full = 0;
         // if char is EOT, stop copying and break
         if (c == EOT) {
             break;
@@ -155,6 +156,10 @@ void ldisc_key_pressed(ldisc_t *ldisc, char c)
             // write EOT and increment head
             ldisc->ldisc_buffer[ldisc->ldisc_head] = EOT;
             ldisc->ldisc_head = (ldisc->ldisc_head + 1) % LDISC_BUFFER_SIZE;
+            // check full
+            if (ldisc->ldisc_head == ldisc->ldisc_tail) {
+                ldisc->ldisc_full = 1;
+            }
             // cook all
             ldisc->ldisc_cooked = ldisc->ldisc_head;
             // wake up reading thread
@@ -167,6 +172,10 @@ void ldisc_key_pressed(ldisc_t *ldisc, char c)
             // write \n and increment head
             ldisc->ldisc_buffer[ldisc->ldisc_head] = '\n';
             ldisc->ldisc_head = (ldisc->ldisc_head + 1) % LDISC_BUFFER_SIZE;
+            // check full
+            if (ldisc->ldisc_head == ldisc->ldisc_tail) {
+                ldisc->ldisc_full = 1;
+            }
             // cook all
             ldisc->ldisc_cooked = ldisc->ldisc_head;
             // emit \n to terminal
