@@ -157,6 +157,7 @@ static void make_devices()
 static void *initproc_run(long arg1, void *arg2)
 {
     proctest_main(arg1, arg2);
+    driverstest_main(arg1, arg2);
 
 #ifdef __VFS__
     dbg(DBG_INIT, "Initializing VFS...\n");
