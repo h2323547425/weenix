@@ -164,7 +164,6 @@ static void *initproc_run(long arg1, void *arg2)
     vfs_init();
     make_devices();
 #endif
-    return NULL;
 
     /* To create a kshell on each terminal */
 #ifdef __DRIVERS__
@@ -177,10 +176,13 @@ static void *initproc_run(long arg1, void *arg2)
         sched_make_runnable(thread);
     }
 #endif
+
     int status;
     /* Run kshell commands until each kshell process exits */
     while (do_waitpid(-1, &status, 0) != -ECHILD)
             ;
+
+    return NULL;
 }
 
 /*

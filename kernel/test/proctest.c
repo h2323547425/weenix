@@ -154,6 +154,7 @@ long proctest_main(long arg1, void *arg2)
     test_termination();
 
     // Add more tests here!
+    test_mutex();
     test_proc();
 
     test_fini();
