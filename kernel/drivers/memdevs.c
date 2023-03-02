@@ -43,7 +43,18 @@ chardev_ops_t zero_dev_ops = {.read = zero_read,
  */
 void memdevs_init()
 {
-    NOT_YET_IMPLEMENTED("DRIVERS: memdevs_init");
+    // NOT_YET_IMPLEMENTED("DRIVERS: memdevs_init");
+    chardev_t *null_dev = kmalloc(sizeof(chardev_t));
+    null_dev->cd_id = MEM_NULL_DEVID;
+    list_link_init(&null_dev->cd_link);
+    null_dev->cd_ops = &null_dev_ops;
+    chardev_register(null_dev);
+
+    chardev_t *zero_dev = kmalloc(sizeof(chardev_t));
+    zero_dev->cd_id = MEM_ZERO_DEVID;
+    list_link_init(&zero_dev->cd_link);
+    zero_dev->cd_ops = &zero_dev_ops;
+    chardev_register(zero_dev);
 }
 
 /**
