@@ -40,10 +40,13 @@ void ldisc_init(ldisc_t *ldisc)
 long ldisc_wait_read(ldisc_t *ldisc, spinlock_t *lock)
 {
     // NOT_YET_IMPLEMENTED("DRIVERS: ldisc_wait_read");
-    if (ldisc->ldisc_full || ldisc->ldisc_cooked != ldisc->ldisc_tail) {
-        return 0;
+    while (!ldisc->ldisc_full && ldisc->ldisc_cooked == ldisc->ldisc_tail) {
+        int ret = sched_cancellable_sleep_on(&ldisc->ldisc_read_queue, lock);
+        if (ret) {
+            return ret;
+        }
     }
-    return sched_cancellable_sleep_on(&ldisc->ldisc_read_queue, lock);;
+    return 0;
 }
 
 /**
