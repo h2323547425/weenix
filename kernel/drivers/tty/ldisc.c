@@ -21,7 +21,6 @@ void ldisc_init(ldisc_t *ldisc)
     ldisc->ldisc_tail = 0;
     ldisc->ldisc_head = 0;
     ldisc->ldisc_full = 0;
-    
     sched_queue_init(&ldisc->ldisc_read_queue);
     memset(ldisc->ldisc_buffer, 0, LDISC_BUFFER_SIZE);
 }
