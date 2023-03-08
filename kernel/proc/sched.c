@@ -295,11 +295,11 @@ void sched_wakeup_on(ktqueue_t *q, kthread_t **ktp)
 {
     int oldIPL = intr_setipl(IPL_HIGH);
     kthread_t *thr = ktqueue_dequeue(q);
-    if (thr == NULL) {
-        return;
-    }
     if (ktp != NULL) {
         *ktp = thr;
+    }
+    if (thr == NULL) {
+        return;
     }
     sched_make_runnable(thr);
     intr_setipl(oldIPL);
