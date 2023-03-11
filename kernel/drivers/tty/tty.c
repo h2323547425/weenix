@@ -76,7 +76,10 @@ ssize_t tty_read(chardev_t *cdev, size_t pos, void *buf, size_t count)
     int oldIPL = intr_setipl(INTR_KEYBOARD);
     tty_t *tty = cd_to_tty(cdev);
     kmutex_lock(&tty->tty_read_mutex);
-    ldisc_wait_read(&tty->tty_ldisc, &tty->tty_lock);
+    int ret = ldisc_wait_read(&tty->tty_ldisc, &tty->tty_lock);
+    if (ret) {
+        return ret;
+    }
     int read_count = ldisc_read(&tty->tty_ldisc, buf, count);
     kmutex_unlock(&tty->tty_read_mutex);
     intr_setipl(oldIPL);
