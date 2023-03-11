@@ -43,7 +43,6 @@ chardev_ops_t zero_dev_ops = {.read = zero_read,
  */
 void memdevs_init()
 {
-    // NOT_YET_IMPLEMENTED("DRIVERS: memdevs_init");
     chardev_t *null_dev = kmalloc(sizeof(chardev_t));
     null_dev->cd_id = MEM_NULL_DEVID;
     list_link_init(&null_dev->cd_link);
@@ -69,7 +68,6 @@ void memdevs_init()
  */
 static ssize_t null_read(chardev_t *dev, size_t pos, void *buf, size_t count)
 {
-    // NOT_YET_IMPLEMENTED("DRIVERS: null_read");
     return 0;
 }
 
@@ -87,7 +85,6 @@ static ssize_t null_read(chardev_t *dev, size_t pos, void *buf, size_t count)
 static ssize_t null_write(chardev_t *dev, size_t pos, const void *buf,
                           size_t count)
 {
-    // NOT_YET_IMPLEMENTED("DRIVERS: null_write");
     return count;
 }
 
@@ -104,7 +101,6 @@ static ssize_t null_write(chardev_t *dev, size_t pos, const void *buf,
  */
 static ssize_t zero_read(chardev_t *dev, size_t pos, void *buf, size_t count)
 {
-    // NOT_YET_IMPLEMENTED("DRIVERS: zero_read");
     char *char_buf = (char *) buf;
     for (size_t i = 0; i < count; i++) {
         char_buf[i] = 0;

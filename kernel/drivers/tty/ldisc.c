@@ -16,7 +16,6 @@
  */
 void ldisc_init(ldisc_t *ldisc)
 {
-    // NOT_YET_IMPLEMENTED("DRIVERS: ldisc_init");
     ldisc->ldisc_cooked = 0;
     ldisc->ldisc_tail = 0;
     ldisc->ldisc_head = 0;
@@ -39,7 +38,6 @@ void ldisc_init(ldisc_t *ldisc)
  */
 long ldisc_wait_read(ldisc_t *ldisc, spinlock_t *lock)
 {
-    // NOT_YET_IMPLEMENTED("DRIVERS: ldisc_wait_read");
     while (!ldisc->ldisc_full && ldisc->ldisc_cooked == ldisc->ldisc_tail) {
         int ret = sched_cancellable_sleep_on(&ldisc->ldisc_read_queue, lock);
         if (ret) {
@@ -66,7 +64,6 @@ long ldisc_wait_read(ldisc_t *ldisc, spinlock_t *lock)
  */
 size_t ldisc_read(ldisc_t *ldisc, char *buf, size_t count)
 {
-    // NOT_YET_IMPLEMENTED("DRIVERS: ldisc_read");
     int read_count = 0;
     for (size_t i = 0; i < count; i++) {
         // break if no cooked char
@@ -138,7 +135,6 @@ size_t ldisc_read(ldisc_t *ldisc, char *buf, size_t count)
  */
 void ldisc_key_pressed(ldisc_t *ldisc, char c)
 {
-    // NOT_YET_IMPLEMENTED("DRIVERS: ldisc_key_pressed");
     tty_t *tty = ldisc_to_tty(ldisc);
     if (c == ETX) {
         // delete raw
@@ -215,7 +211,6 @@ void ldisc_key_pressed(ldisc_t *ldisc, char c)
  */
 size_t ldisc_get_current_line_raw(ldisc_t *ldisc, char *s)
 {
-    // NOT_YET_IMPLEMENTED("DRIVERS: ldisc_get_current_line_raw");
     int read_count = 0;
     size_t i = ldisc->ldisc_cooked;
     while(i != ldisc->ldisc_head) {
