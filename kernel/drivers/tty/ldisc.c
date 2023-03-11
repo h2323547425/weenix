@@ -70,13 +70,12 @@ size_t ldisc_read(ldisc_t *ldisc, char *buf, size_t count)
     int read_count = 0;
     for (size_t i = 0; i < count; i++) {
         // break if no cooked char
-        if (ldisc->ldisc_tail == ldisc->ldisc_cooked) {
+        if (ldisc->ldisc_tail == ldisc->ldisc_cooked && !ldisc->ldisc_full) {
             break;
         }
         // get the cooked char and increment tail
         char c = ldisc->ldisc_buffer[ldisc->ldisc_tail];
         ldisc->ldisc_tail = (ldisc->ldisc_tail + 1) % LDISC_BUFFER_SIZE;
-        ldisc->ldisc_full = 0;
         // if char is EOT, stop copying and break
         if (c == EOT) {
             break;
@@ -89,6 +88,7 @@ size_t ldisc_read(ldisc_t *ldisc, char *buf, size_t count)
         read_count++;
         buf[i] = c;
     }
+    ldisc->ldisc_full = 0;
     return read_count;
 }
 
