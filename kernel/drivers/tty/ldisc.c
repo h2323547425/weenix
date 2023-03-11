@@ -81,9 +81,8 @@ size_t ldisc_read(ldisc_t *ldisc, char *buf, size_t count)
         if (c == EOT) {
             break;
         }
-        // if char is \n, increment read_count, stop copying, and break
+        // if char is \n, stop copying, and break
         if (c == '\n') {
-            read_count++;
             break;
         }
         // otherwise, increment read_count and copy char
