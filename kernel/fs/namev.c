@@ -78,10 +78,10 @@ long namev_lookup(vnode_t *dir, const char *name, size_t namelen,
 {
     // NOT_YET_IMPLEMENTED("VFS: namev_lookup");
 
-    KASSERT(dir->vn_state_lock.s_locked);
+    KASSERT(dir->vn_mobj.mo_mutex.km_holder != NULL);
 
     if (!S_ISDIR(dir->vn_mode) || dir->vn_ops == NULL || dir->vn_ops->lookup == NULL) {
-        return ENOTDIR;
+        return -ENOTDIR;
     }
 
     return dir->vn_ops->lookup(dir, name, namelen, res_vnode);
@@ -196,10 +196,10 @@ long namev_dir(vnode_t *base, const char *path, vnode_t **res_vnode,
 {
     // NOT_YET_IMPLEMENTED("VFS: namev_dir");
     
-    KASSERT(!base->vn_state_lock.s_locked);
+    KASSERT(base->vn_mobj.mo_mutex.km_holder == NULL);
 
     if (*path == '\0') {
-        return EINVAL;
+        return -EINVAL;
     }
 
     // check if path starts with "/", lock and reference base
@@ -209,27 +209,35 @@ long namev_dir(vnode_t *base, const char *path, vnode_t **res_vnode,
 
     vref(base);
     *res_vnode = base;
-    int len;
+    int tmp_namelen;
+    char *tmp_name;
     while (1) {
-        char *name = namev_tokenize(&path, &len);
-        if (len == 0) {
-            if (base != *res_vnode) {
-                vunlock(*res_vnode);
-            }
+        tmp_name = namev_tokenize(&path, &tmp_namelen);
+        if (tmp_namelen == 0) {
+            // if (base != *res_vnode) {
+            //     vunlock(*res_vnode);
+            // }
+            vput(res_vnode);
+            *res_vnode = base;
             break;
         }
         
+        *name = tmp_name;
+        *namelen = tmp_namelen;
         base = *res_vnode;
         vlock(base);
         // call to lookup, unlock dir, error check
-        long ret = namev_lookup(base, name, len, res_vnode);
+        long ret = namev_lookup(base, name, *namelen, res_vnode);
         vunlock(base);
         vput(&base);
         if (ret) {
+            KASSERT(base->vn_mobj.mo_mutex.km_holder == NULL);
             return ret;
         }
     }
 
+    KASSERT(base->vn_mobj.mo_mutex.km_holder == NULL);
+    KASSERT((*res_vnode)->vn_mobj.mo_mutex.km_holder == NULL);
     return 0;
 }
 
@@ -259,7 +267,46 @@ long namev_dir(vnode_t *base, const char *path, vnode_t **res_vnode,
 long namev_open(vnode_t *base, const char *path, int oflags, int mode,
                 devid_t devid, struct vnode **res_vnode)
 {
-    NOT_YET_IMPLEMENTED("VFS: namev_open");
+    // NOT_YET_IMPLEMENTED("VFS: namev_open");
+    int isDir = path[strlen(path) - 1] == '/';
+    int doCreat = oflags & O_CREAT == O_CREAT;
+
+    if (doCreat && isDir) {
+        return -EINVAL;
+    }
+
+    // find the base node and error check
+    char* basename;
+    int basenamelen;
+    long ret = namev_dir(base, path, res_vnode, &basename, &basenamelen);
+    if (ret) {
+        return ret;
+    }
+    if (basenamelen > NAME_LEN) {
+        return -ENAMETOOLONG;
+    }
+
+    // lookup the target node
+    vnode_t *basedir = *res_vnode;
+    vref(basedir);
+    vlock(basedir);
+    ret = namev_lookup(basedir, basename, basenamelen, res_vnode);
+    // error check lookup
+    if (ret) {
+        // try creating the file
+        if (ret != -ENOTDIR && doCreat) {
+            basename[basenamelen] = '\0';
+            ret = basedir->vn_ops->mknod(basedir, basename, basenamelen, mode, devid, res_vnode);
+            vunlock(basedir);
+            vput(&basedir);
+            return ret;
+        }
+        vunlock(basedir);
+        vput(&basedir);
+        return ret;
+    }
+    vunlock(basedir);
+    vput(&basedir);
     return 0;
 }
 
