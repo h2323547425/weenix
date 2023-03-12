@@ -76,8 +76,8 @@ long namev_is_descendant(vnode_t *a, vnode_t *b)
 long namev_lookup(vnode_t *dir, const char *name, size_t namelen,
                   vnode_t **res_vnode)
 {
-    NOT_YET_IMPLEMENTED("VFS: namev_lookup");
-    return 0;
+    // NOT_YET_IMPLEMENTED("VFS: namev_lookup");
+    return dir->vn_ops->lookup(dir, name, namelen, res_vnode);
 }
 
 /*
@@ -170,7 +170,7 @@ static const char *namev_tokenize(const char **search, size_t *len)
  *  - When parsing the path, you do not need to implement hand-over-hand
  *    locking. That is, when calling `namev_lookup(dir, path, pathlen, &out)`,
  *    it is safe to put away and unlock dir before locking `out`.
- *  - You are encouraged to use namev_tokenize() to help parse path.  
+ *  - You are encouraged to use namev_tokenize() to help parse path.
  *  - Whether you're using the provided base or the root vnode, you will have
  *    to explicitly lock and reference your starting vnode before using it.
  *  - Don't allocate memory to return name. Just set name to point into the
