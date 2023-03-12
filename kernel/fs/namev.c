@@ -77,6 +77,13 @@ long namev_lookup(vnode_t *dir, const char *name, size_t namelen,
                   vnode_t **res_vnode)
 {
     // NOT_YET_IMPLEMENTED("VFS: namev_lookup");
+
+    KASSERT(dir->vn_state_lock.s_locked);
+
+    if (!S_ISDIR(dir->vn_mode) || dir->vn_ops == NULL || dir->vn_ops->lookup == NULL) {
+        return ENOTDIR;
+    }
+
     return dir->vn_ops->lookup(dir, name, namelen, res_vnode);
 }
 
@@ -90,7 +97,7 @@ long namev_lookup(vnode_t *dir, const char *name, size_t namelen,
  * 	this in a loop, we suggest terminating the loop once the value returned
  * 	in len is 0
  * 
- * Example usage: 
+ * Example usage: t
  * - "/dev/null" 
  * ==> *search would point to the first character of "/null"
  * ==> *len would be 3 (as "dev" is of length 3)
@@ -187,7 +194,42 @@ static const char *namev_tokenize(const char **search, size_t *len)
 long namev_dir(vnode_t *base, const char *path, vnode_t **res_vnode,
                const char **name, size_t *namelen)
 {
-    NOT_YET_IMPLEMENTED("VFS: namev_dir");
+    // NOT_YET_IMPLEMENTED("VFS: namev_dir");
+    
+    KASSERT(!base->vn_state_lock.s_locked);
+
+    if (*path == '\0') {
+        return EINVAL;
+    }
+
+    // check if path starts with "/", lock and reference base
+    if (*path == '/') {
+        base = vfs_root_fs.fs_root;
+    }
+
+    vref(base);
+    *res_vnode = base;
+    int len;
+    while (1) {
+        char *name = namev_tokenize(&path, &len);
+        if (len == 0) {
+            if (base != *res_vnode) {
+                vunlock(*res_vnode);
+            }
+            break;
+        }
+        
+        base = *res_vnode;
+        vlock(base);
+        // call to lookup, unlock dir, error check
+        long ret = namev_lookup(base, name, len, res_vnode);
+        vunlock(base);
+        vput(&base);
+        if (ret) {
+            return ret;
+        }
+    }
+
     return 0;
 }
 
