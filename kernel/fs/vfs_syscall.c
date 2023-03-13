@@ -26,8 +26,22 @@
  */
 ssize_t do_read(int fd, void *buf, size_t len)
 {
-    NOT_YET_IMPLEMENTED("VFS: do_read");
-    return -1;
+    // NOT_YET_IMPLEMENTED("VFS: do_read");
+    if (fd < 0 || fd >= NFILES || !(curproc->p_files[fd]->f_mode & FMODE_READ)) {
+        return -EBADF;
+    }
+    vnode_t *vnode = curproc->p_files[fd]->f_vnode;
+    if (S_ISDIR(vnode->vn_mode)) {
+        return -EISDIR;
+    }
+    vlock(vnode);
+    ssize_t ret = vnode->vn_ops->read(vnode, curproc->p_files[fd]->f_pos, buf, len);
+    if (ret < 0) {
+        return ret;
+    }
+    curproc->p_files[fd]->f_pos += ret;
+    vunlock(vnode);
+    return ret;
 }
 
 /*
