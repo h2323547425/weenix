@@ -60,8 +60,60 @@ long get_empty_fd(int *fd)
  * If a vnode represents a chardev or blockdev, then the appropriate field of
  * the vnode->vn_dev union will point to the device. Otherwise, the union will be NULL.
  */
-long do_open(const char *filename, int oflags)
+long op(const char *filename, int oflags)
 {
-    NOT_YET_IMPLEMENTED("VFS: do_open");
-    return -1;
+    // NOT_YET_IMPLEMENTED("VFS: do_open");
+
+    // validate the oflags
+    if (oflags & O_WRONLY && oflags & O_RDWR) {
+        return -EINVAL;
+    }
+
+    // get an available fd and error check
+    int fd;
+    long ret = get_empty_fd(fd);
+    if (ret) {
+        return ret;
+    }
+
+    // get the corresponding vnode and error check
+    vnode_t *base = curproc->p_cwd;
+    vnode_t *res_vnode;
+    vref(base);
+    ret = namev_open(base, filename, oflags, S_IFREG, 0, &res_vnode);
+    vput(base);
+    if (ret) {
+        return ret;
+    }
+
+    // check for truncate routine, device
+    if (oflags & O_TRUNC && S_ISREG(res_vnode->vn_mode)) {
+        res_vnode->vn_ops->truncate_file(res_vnode);  
+    }
+    // if(S_ISBLK(res_vnode->vn_mode)) {
+    //     res_vnode->vn_dev.blockdev = 
+    // }
+
+    // convert flag
+    int mode = 0;
+    if (oflags & O_RDONLY) {
+        mode |= FMODE_READ;
+    }
+    if (oflags & O_WRONLY) {
+        mode |= FMODE_WRITE;
+    }
+    if (oflags & O_RDWR) {
+        mode |= FMODE_READ;
+        mode |= FMODE_WRITE;
+    }
+    if (oflags & O_APPEND) {
+        mode |= FMODE_APPEND;
+    }
+
+    // make call to fcreate and error check
+    file_t *fRet = fcreate(fd, res_vnode, mode);
+    if (fRet == NULL) {
+        return -ENOMEM;
+    }
+    return fd;
 }

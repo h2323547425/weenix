@@ -209,10 +209,9 @@ long namev_dir(vnode_t *base, const char *path, vnode_t **res_vnode,
 
     vref(base);
     *res_vnode = base;
-    int tmp_namelen;
-    char *tmp_name;
+    size_t tmp_namelen;
     while (1) {
-        tmp_name = namev_tokenize(&path, &tmp_namelen);
+        const char *tmp_name = namev_tokenize(&path, &tmp_namelen);
         if (tmp_namelen == 0) {
             // if (base != *res_vnode) {
             //     vunlock(*res_vnode);
@@ -227,7 +226,7 @@ long namev_dir(vnode_t *base, const char *path, vnode_t **res_vnode,
         base = *res_vnode;
         vlock(base);
         // call to lookup, unlock dir, error check
-        long ret = namev_lookup(base, name, *namelen, res_vnode);
+        long ret = namev_lookup(base, *name, *namelen, res_vnode);
         vunlock(base);
         vput(&base);
         if (ret) {
@@ -269,7 +268,7 @@ long namev_open(vnode_t *base, const char *path, int oflags, int mode,
 {
     // NOT_YET_IMPLEMENTED("VFS: namev_open");
     int isDir = path[strlen(path) - 1] == '/';
-    int doCreat = oflags & O_CREAT == O_CREAT;
+    int doCreat = oflags & O_CREAT;
 
     if (doCreat && isDir) {
         return -EINVAL;
@@ -277,7 +276,7 @@ long namev_open(vnode_t *base, const char *path, int oflags, int mode,
 
     // find the base node and error check
     char* basename;
-    int basenamelen;
+    size_t basenamelen;
     long ret = namev_dir(base, path, res_vnode, &basename, &basenamelen);
     if (ret) {
         return ret;
