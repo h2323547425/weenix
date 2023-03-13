@@ -60,8 +60,25 @@ ssize_t do_read(int fd, void *buf, size_t len)
  */
 ssize_t do_write(int fd, const void *buf, size_t len)
 {
-    NOT_YET_IMPLEMENTED("VFS: do_write");
-    return -1;
+    // NOT_YET_IMPLEMENTED("VFS: do_write");
+    if (fd < 0 || fd >= NFILES || !(curproc->p_files[fd]->f_mode & FMODE_WRITE)) {
+        return -EBADF;
+    }
+    vnode_t *vnode = curproc->p_files[fd]->f_vnode;
+    // if (S_ISDIR(vnode->vn_mode)) {
+    //     return -EISDIR;
+    // }
+    vlock(vnode);
+    if (curproc->p_files[fd]->f_mode & FMODE_APPEND) {
+        curproc->p_files[fd]->f_pos = curproc->p_files[fd]->f_vnode->vn_len;
+    }
+    ssize_t ret = vnode->vn_ops->write(vnode, curproc->p_files[fd]->f_pos, buf, len);
+    if (ret < 0) {
+        return ret;
+    }
+    curproc->p_files[fd]->f_pos += ret;
+    vunlock(vnode);
+    return ret;
 }
 
 /*
