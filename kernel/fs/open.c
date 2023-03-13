@@ -71,7 +71,7 @@ long op(const char *filename, int oflags)
 
     // get an available fd and error check
     int fd;
-    long ret = get_empty_fd(fd);
+    long ret = get_empty_fd(&fd);
     if (ret) {
         return ret;
     }
@@ -81,7 +81,7 @@ long op(const char *filename, int oflags)
     vnode_t *res_vnode;
     vref(base);
     ret = namev_open(base, filename, oflags, S_IFREG, 0, &res_vnode);
-    vput(base);
+    vput(&base);
     if (ret) {
         return ret;
     }
