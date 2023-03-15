@@ -98,8 +98,10 @@ long do_close(int fd)
     if (fd < 0 || fd >= NFILES || curproc->p_files[fd] == NULL) {
         return -EBADF;
     }
+
     fput(&curproc->p_files[fd]);
     curproc->p_files[fd] = NULL;
+
     return 0;
 }
 
@@ -114,8 +116,21 @@ long do_close(int fd)
  */
 long do_dup(int fd)
 {
-    NOT_YET_IMPLEMENTED("VFS: do_dup");
-    return -1;
+    // NOT_YET_IMPLEMENTED("VFS: do_dup");
+    if (fd < 0 || fd >= NFILES || curproc->p_files[fd] == NULL) {
+        return -EBADF;
+    }
+
+    int new_fd;
+    long ret = get_empty_fd(&new_fd);
+    if (ret) {
+        return ret;
+    }
+
+    curproc->p_files[fd]->f_refcount++;
+    curproc->p_files[new_fd] = curproc->p_files[fd];
+
+    return new_fd;
 }
 
 /*
@@ -130,7 +145,7 @@ long do_dup(int fd)
  */
 long do_dup2(int ofd, int nfd)
 {
-    NOT_YET_IMPLEMENTED("VFS: do_dup2");
+    // NOT_YET_IMPLEMENTED("VFS: do_dup2");
     return -1;
 }
 
