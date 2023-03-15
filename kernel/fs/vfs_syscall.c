@@ -98,7 +98,8 @@ long do_close(int fd)
     if (fd < 0 || fd >= NFILES || curproc->p_files[fd] == NULL) {
         return -EBADF;
     }
-    slab_obj_free(file_allocator)
+    fput(&curproc->p_files[fd]);
+    curproc->p_files[fd] = NULL;
     return 0;
 }
 
