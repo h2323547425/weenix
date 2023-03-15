@@ -146,7 +146,25 @@ long do_dup(int fd)
 long do_dup2(int ofd, int nfd)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_dup2");
-    return -1;
+    if (ofd < 0 || ofd >= NFILES || curproc->p_files[ofd] == NULL 
+        || nfd < 0 || nfd >= NFILES) {
+        return -EBADF;
+    }
+
+    if (ofd != nfd) {
+        
+        if (curproc->p_files[nfd] != NULL) {
+            long ret = do_close(nfd);
+            if (ret) {
+                return ret;
+            }
+        }
+        
+        curproc->p_files[ofd]->f_refcount++;
+        curproc->p_files[nfd] = curproc->p_files[ofd];
+    }
+
+    return nfd;
 }
 
 /*
