@@ -94,8 +94,12 @@ ssize_t do_write(int fd, const void *buf, size_t len)
  */
 long do_close(int fd)
 {
-    NOT_YET_IMPLEMENTED("VFS: do_close");
-    return -1;
+    // NOT_YET_IMPLEMENTED("VFS: do_close");
+    if (fd < 0 || fd >= NFILES || curproc->p_files[fd] == NULL) {
+        return -EBADF;
+    }
+    slab_obj_free(file_allocator)
+    return 0;
 }
 
 /*
