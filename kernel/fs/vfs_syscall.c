@@ -95,7 +95,7 @@ ssize_t do_write(int fd, const void *buf, size_t len)
 long do_close(int fd)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_close");
-    if (fd < 0 || fd >= NFILES || curproc->p_files[fd] == NULL) {
+    if (fd < 0 || fd >= NFILES || !curproc->p_files[fd]) {
         return -EBADF;
     }
 
@@ -117,7 +117,7 @@ long do_close(int fd)
 long do_dup(int fd)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_dup");
-    if (fd < 0 || fd >= NFILES || curproc->p_files[fd] == NULL) {
+    if (fd < 0 || fd >= NFILES || !curproc->p_files[fd]) {
         return -EBADF;
     }
 
@@ -153,7 +153,7 @@ long do_dup2(int ofd, int nfd)
 
     if (ofd != nfd) {
         
-        if (curproc->p_files[nfd] != NULL) {
+        if (curproc->p_files[nfd]) {
             long ret = do_close(nfd);
             if (ret) {
                 return ret;
