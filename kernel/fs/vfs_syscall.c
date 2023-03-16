@@ -196,7 +196,7 @@ long do_mknod(const char *path, int mode, devid_t devid)
     vref(base);
     long ret = namev_open(base, path, O_CREAT, mode, devid, &res_vnode);
     vput(&base);
-    vput(res_vnode);
+    vput(&res_vnode);
 
     return ret;
 }
@@ -344,8 +344,46 @@ long do_rmdir(const char *path)
 long do_unlink(const char *path)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_unlink");
-    
-    return -1;
+    // find the base node and error check
+    char* basename;
+    size_t basenamelen;
+
+    vnode_t *base = curproc->p_cwd;
+    vnode_t *res_vnode;
+    vref(base);
+
+    long ret = namev_dir(base, path, &res_vnode, &basename, &basenamelen);
+    vput(&base);
+    if (ret) {
+        return ret;
+    }
+    // error check for name too long
+    if (basenamelen > NAME_LEN) {
+        return -ENAMETOOLONG;
+    }
+
+    // lookup the target node
+    vnode_t *basedir = res_vnode;
+    vlock(basedir);
+    ret = namev_lookup(basedir, basename, basenamelen, &res_vnode);
+
+    // error check lookup
+    if (ret) {
+        vput_locked(&basedir);
+        return ret;
+    }
+
+    // error check for unlink dir
+    if (S_ISDIR(res_vnode->vn_mode)) {
+        vput_locked(&basedir);
+        vput(&res_vnode);
+        return -EPERM;
+    }
+    vput(&res_vnode);
+
+    ret = basedir->vn_ops->unlink(basedir, basename, basenamelen);
+    vput_locked(&basedir);
+    return ret;
 }
 
 /*
