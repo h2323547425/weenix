@@ -213,11 +213,7 @@ long namev_dir(vnode_t *base, const char *path, vnode_t **res_vnode,
     while (1) {
         const char *tmp_name = namev_tokenize(&path, &tmp_namelen);
         if (tmp_namelen == 0) {
-            // if (base != *res_vnode) {
-            //     vunlock(*res_vnode);
-            // }
-            vput(res_vnode);
-            *res_vnode = base;
+            // *res_vnode = base;
             break;
         }
         
@@ -228,7 +224,9 @@ long namev_dir(vnode_t *base, const char *path, vnode_t **res_vnode,
         // call to lookup, unlock dir, error check
         long ret = namev_lookup(base, *name, *namelen, res_vnode);
         vunlock(base);
-        vput(&base);
+        if (base != *res_vnode) {
+            vput(&base);
+        }
         if (ret) {
             KASSERT(base->vn_mobj.mo_mutex.km_holder == NULL);
             return ret;
@@ -287,25 +285,21 @@ long namev_open(vnode_t *base, const char *path, int oflags, int mode,
 
     // lookup the target node
     vnode_t *basedir = *res_vnode;
-    vref(basedir);
     vlock(basedir);
     ret = namev_lookup(basedir, basename, basenamelen, res_vnode);
     // error check lookup
     if (ret) {
         // try creating the file
-        if (ret != -ENOTDIR && doCreat) {
+        if (doCreat) {
             basename[basenamelen] = '\0';
             ret = basedir->vn_ops->mknod(basedir, basename, basenamelen, mode, devid, res_vnode);
-            vunlock(basedir);
-            vput(&basedir);
+            vput_locked(&basedir);
             return ret;
         }
-        vunlock(basedir);
-        vput(&basedir);
+        vput_locked(&basedir);
         return ret;
     }
-    vunlock(basedir);
-    vput(&basedir);
+    vput_locked(&basedir);
     return 0;
 }
 
