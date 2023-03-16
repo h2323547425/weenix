@@ -663,8 +663,23 @@ off_t do_lseek(int fd, off_t offset, int whence)
  */
 long do_stat(const char *path, stat_t *buf)
 {
-    NOT_YET_IMPLEMENTED("VFS: do_stat");
-    return -1;
+    // NOT_YET_IMPLEMENTED("VFS: do_stat");
+    vnode_t *base = curproc->p_cwd;
+    vref(base);
+
+    // resolve to get the node and error check
+    vnode_t *res_vnode;
+    long ret = namev_resolve(base, path, &res_vnode);
+    vput(&base);
+    if (ret) {
+        return ret;
+    }
+
+    vlock(res_vnode);
+    ret = res_vnode->vn_ops->stat(res_vnode, buf);
+    vunlock(res_vnode);
+    
+    return ret;
 }
 
 #ifdef __MOUNTING__
