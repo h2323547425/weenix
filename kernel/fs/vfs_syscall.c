@@ -430,7 +430,7 @@ long do_link(const char *oldpath, const char *newpath)
     const char* basename;
     size_t basenamelen;
     vnode_t *dir_vnode;
-    long ret = namev_dir(base, newpath, &dir_vnode, &basename, &basenamelen);
+    ret = namev_dir(base, newpath, &dir_vnode, &basename, &basenamelen);
     vput(&base);
     if (ret) {
         return ret;
@@ -553,7 +553,7 @@ long do_chdir(const char *path)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_chdir");
     vnode_t *base = curproc->p_cwd;
-    ref(base);
+    vref(base);
 
     // resolve to get the node and error check
     vnode_t *res_vnode;
