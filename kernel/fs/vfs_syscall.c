@@ -636,13 +636,13 @@ off_t do_lseek(int fd, off_t offset, int whence)
         }
         curproc->p_files[fd]->f_pos = offset;
     } else if (whence == SEEK_CUR) {
-        if (curproc->p_files[fd]->f_pos + offset < 0) {
+        if ((int) (curproc->p_files[fd]->f_pos) + offset < 0) {
             vunlock(vnode);
             return -EINVAL;
         }
         curproc->p_files[fd]->f_pos += offset;
     } else if (whence == SEEK_END) {
-        if (vnode->vn_len + offset < 0) {
+        if ((int) (vnode->vn_len) + offset < 0) {
             vunlock(vnode);
             return -EINVAL;
         }
