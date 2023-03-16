@@ -225,7 +225,7 @@ long do_mkdir(const char *path)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_mkdir");
     // find the base node and error check
-    char* basename;
+    const char* basename;
     size_t basenamelen;
 
     vnode_t *base = curproc->p_cwd;
@@ -239,6 +239,7 @@ long do_mkdir(const char *path)
     }
     // error check for name too long
     if (basenamelen > NAME_LEN) {
+        vput(&res_vnode);
         return -ENAMETOOLONG;
     }
 
@@ -288,7 +289,7 @@ long do_rmdir(const char *path)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_rmdir");
     // find the base node and error check
-    char* basename;
+    const char* basename;
     size_t basenamelen;
 
     vnode_t *base = curproc->p_cwd;
@@ -302,13 +303,16 @@ long do_rmdir(const char *path)
     }
     // error check for name too long
     if (basenamelen > NAME_LEN) {
+        vput(&res_vnode);
         return -ENAMETOOLONG;
     }
     // error check for invalid basename
     if (!strncmp(basename, ".", 1)) {
+        vput(&res_vnode);
         return -EINVAL;
     }
     if (!strncmp(basename, "..", 2)) {
+        vput(&res_vnode);
         return -ENOTEMPTY;
     }
 
@@ -345,7 +349,7 @@ long do_unlink(const char *path)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_unlink");
     // find the base node and error check
-    char* basename;
+    const char* basename;
     size_t basenamelen;
 
     vnode_t *base = curproc->p_cwd;
@@ -359,6 +363,7 @@ long do_unlink(const char *path)
     }
     // error check for name too long
     if (basenamelen > NAME_LEN) {
+        vput(&res_vnode);
         return -ENAMETOOLONG;
     }
 
@@ -405,8 +410,46 @@ long do_unlink(const char *path)
  */
 long do_link(const char *oldpath, const char *newpath)
 {
-    NOT_YET_IMPLEMENTED("VFS: do_link");
-    return -1;
+    // NOT_YET_IMPLEMENTED("VFS: do_link");
+    vnode_t *base = curproc->p_cwd;
+    vref(base);
+    // resolve on old path to get node and error check
+    vnode_t *res_vnode;
+    long ret = namev_resolve(base, oldpath, &res_vnode);
+    if (ret) {
+        vput(&base);
+        return ret;
+    }
+    if (S_ISDIR(res_vnode->vn_mode)) {
+        vput(&base);
+        vput(&res_vnode);
+        return -EPERM;
+    }
+
+    // get dir node and error check
+    const char* basename;
+    size_t basenamelen;
+    vnode_t *dir_vnode;
+    long ret = namev_dir(base, newpath, &dir_vnode, &basename, &basenamelen);
+    vput(&base);
+    if (ret) {
+        return ret;
+    }
+    if (basenamelen > NAME_LEN) {
+        vput(&dir_vnode);
+        return -ENAMETOOLONG;
+    }
+
+    // lock the directory and target vnodes in order
+    vlock_in_order(dir_vnode, res_vnode);
+
+    // call dir link operation, unlock in order, and error check
+    ret = dir_vnode->vn_ops->link(dir_vnode, basename, basenamelen, res_vnode);
+    vunlock_in_order(dir_vnode, res_vnode);
+    vput(&dir_vnode);
+    vput(&res_vnode);
+
+    return ret;
 }
 
 /* Rename a file or directory.
