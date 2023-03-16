@@ -599,7 +599,9 @@ ssize_t do_getdent(int fd, struct dirent *dirp)
         return -ENOTDIR;
     }
 
-    long ret = vnode->vn_ops->readdir(vnode, 0, dirp);
+    vlock(vnode);
+    long ret = vnode->vn_ops->readdir(vnode, curproc->p_files[fd]->f_pos, dirp);
+    vunlock(vnode);
     if (ret < 0) {
         return ret;
     }
@@ -621,8 +623,37 @@ ssize_t do_getdent(int fd, struct dirent *dirp)
  */
 off_t do_lseek(int fd, off_t offset, int whence)
 {
-    NOT_YET_IMPLEMENTED("VFS: do_lseek");
-    return -1;
+    // NOT_YET_IMPLEMENTED("VFS: do_lseek"); 
+    if (fd < 0 || fd >= NFILES || !(curproc->p_files[fd])) {
+        return -EBADF;
+    }
+    vnode_t *vnode = curproc->p_files[fd]->f_vnode;
+    vlock(vnode);
+    if (whence == SEEK_SET) {
+        if (offset < 0) {
+            vunlock(vnode);
+            return -EINVAL;
+        }
+        curproc->p_files[fd]->f_pos = offset;
+    } else if (whence == SEEK_CUR) {
+        if (curproc->p_files[fd]->f_pos + offset < 0) {
+            vunlock(vnode);
+            return -EINVAL;
+        }
+        curproc->p_files[fd]->f_pos += offset;
+    } else if (whence == SEEK_END) {
+        if (vnode->vn_len + offset < 0) {
+            vunlock(vnode);
+            return -EINVAL;
+        }
+        curproc->p_files[fd]->f_pos = vnode->vn_len + offset;
+    } else {
+        vunlock(vnode);
+        return -EINVAL;
+    }
+    vunlock(vnode);
+    
+    return curproc->p_files[fd]->f_pos;
 }
 
 /* Use buf to return the status of the file represented by path.
