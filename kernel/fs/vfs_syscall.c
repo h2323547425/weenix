@@ -186,8 +186,19 @@ long do_dup2(int ofd, int nfd)
  */
 long do_mknod(const char *path, int mode, devid_t devid)
 {
-    NOT_YET_IMPLEMENTED("VFS: do_mknod");
-    return -1;
+    // NOT_YET_IMPLEMENTED("VFS: do_mknod");
+    if (mode != S_IFCHR && mode != S_IFBLK && mode != S_IFREG) {
+        return -EINVAL;
+    }
+
+    vnode_t *base = curproc->p_cwd;
+    vnode_t *res_vnode;
+    vref(base);
+    long ret = namev_open(base, path, O_CREAT, mode, devid, &res_vnode);
+    vput(&base);
+    vput(res_vnode);
+    
+    return ret;
 }
 
 /*
