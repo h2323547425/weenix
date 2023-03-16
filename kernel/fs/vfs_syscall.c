@@ -551,8 +551,27 @@ long do_rename(const char *oldpath, const char *newpath)
  */
 long do_chdir(const char *path)
 {
-    NOT_YET_IMPLEMENTED("VFS: do_chdir");
-    return -1;
+    // NOT_YET_IMPLEMENTED("VFS: do_chdir");
+    vnode_t *base = curproc->p_cwd;
+    ref(base);
+
+    // resolve to get the node and error check
+    vnode_t *res_vnode;
+    long ret = namev_resolve(base, path, &res_vnode);
+    vput(&base);
+    if (ret) {
+        return ret;
+    }
+    if (S_ISDIR(res_vnode->vn_mode)) {
+        vput(&res_vnode);
+        return -ENOTDIR;
+    }
+
+    // decrement the referrence count for the current base
+    vput(&curproc->p_cwd);
+    curproc->p_cwd = res_vnode;
+
+    return 0;;
 }
 
 /*
