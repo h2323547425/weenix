@@ -590,8 +590,20 @@ long do_chdir(const char *path)
  */
 ssize_t do_getdent(int fd, struct dirent *dirp)
 {
-    NOT_YET_IMPLEMENTED("VFS: do_getdent");
-    return -1;
+    // NOT_YET_IMPLEMENTED("VFS: do_getdent");
+    if (fd < 0 || fd >= NFILES || !(curproc->p_files[fd])) {
+        return -EBADF;
+    }
+    vnode_t *vnode = curproc->p_files[fd]->f_vnode;
+    if (!S_ISDIR(vnode->vn_mode)) {
+        return -ENOTDIR;
+    }
+
+    long ret = vnode->vn_ops->readdir(vnode, 0, dirp);
+    if (ret < 0) {
+        return ret;
+    }
+    return sizeof(dirent_t);
 }
 
 /*
