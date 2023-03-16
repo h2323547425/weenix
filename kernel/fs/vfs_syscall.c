@@ -197,7 +197,7 @@ long do_mknod(const char *path, int mode, devid_t devid)
     long ret = namev_open(base, path, O_CREAT, mode, devid, &res_vnode);
     vput(&base);
     vput(res_vnode);
-    
+
     return ret;
 }
 
@@ -223,8 +223,44 @@ long do_mknod(const char *path, int mode, devid_t devid)
  */
 long do_mkdir(const char *path)
 {
-    NOT_YET_IMPLEMENTED("VFS: do_mkdir");
-    return -1;
+    // NOT_YET_IMPLEMENTED("VFS: do_mkdir");
+    // find the base node and error check
+    char* basename;
+    size_t basenamelen;
+
+    vnode_t *base = curproc->p_cwd;
+    vnode_t *res_vnode;
+    vref(base);
+
+    long ret = namev_dir(base, path, &res_vnode, &basename, &basenamelen);
+    vput(&base);
+    if (ret) {
+        return ret;
+    }
+    
+    if (basenamelen > NAME_LEN) {
+        return -ENAMETOOLONG;
+    }
+
+    // lookup the target node
+    vnode_t *basedir = res_vnode;
+    vlock(basedir);
+    ret = namev_lookup(basedir, basename, basenamelen, &res_vnode);
+
+    // error check lookup
+    if (ret) {
+        // try creating the file
+        ret = basedir->vn_ops->mkdir(basedir, basename, basenamelen, &res_vnode);
+        vput_locked(&basedir);
+        if (!ret) {
+            vput(&res_vnode);
+        }
+        return ret;
+    }
+
+    vput_locked(&basedir);
+    vput(&res_vnode);
+    return 0;
 }
 
 /*
