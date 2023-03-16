@@ -237,7 +237,7 @@ long do_mkdir(const char *path)
     if (ret) {
         return ret;
     }
-    
+    // error check for name too long
     if (basenamelen > NAME_LEN) {
         return -ENAMETOOLONG;
     }
@@ -249,18 +249,23 @@ long do_mkdir(const char *path)
 
     // error check lookup
     if (ret) {
+        if (ret != -ENOENT) {
+            vput_locked(&basedir);
+            return ret;
+        }
         // try creating the file
         ret = basedir->vn_ops->mkdir(basedir, basename, basenamelen, &res_vnode);
         vput_locked(&basedir);
         if (!ret) {
             vput(&res_vnode);
+            return 0;
         }
         return ret;
     }
 
     vput_locked(&basedir);
     vput(&res_vnode);
-    return 0;
+    return -EEXIST;
 }
 
 /*
@@ -281,8 +286,47 @@ long do_mkdir(const char *path)
  */
 long do_rmdir(const char *path)
 {
-    NOT_YET_IMPLEMENTED("VFS: do_rmdir");
-    return -1;
+    // NOT_YET_IMPLEMENTED("VFS: do_rmdir");
+    // find the base node and error check
+    char* basename;
+    size_t basenamelen;
+
+    vnode_t *base = curproc->p_cwd;
+    vnode_t *res_vnode;
+    vref(base);
+
+    long ret = namev_dir(base, path, &res_vnode, &basename, &basenamelen);
+    vput(&base);
+    if (ret) {
+        return ret;
+    }
+    // error check for name too long
+    if (basenamelen > NAME_LEN) {
+        return -ENAMETOOLONG;
+    }
+    // error check for invalid basename
+    if (!strncmp(basename, ".", 1)) {
+        return -EINVAL;
+    }
+    if (!strncmp(basename, "..", 2)) {
+        return -ENOTEMPTY;
+    }
+
+    // lookup the target node
+    vnode_t *basedir = res_vnode;
+    vlock(basedir);
+    ret = namev_lookup(basedir, basename, basenamelen, &res_vnode);
+
+    // error check lookup
+    if (ret) {
+        vput_locked(&basedir);
+        return ret;
+    }
+
+    // call vnode rmdir operation
+    ret = basedir->vn_ops->rmdir(basedir, basename, basenamelen);
+    vput_locked(&basedir);
+    return ret;
 }
 
 /*
@@ -299,7 +343,8 @@ long do_rmdir(const char *path)
  */
 long do_unlink(const char *path)
 {
-    NOT_YET_IMPLEMENTED("VFS: do_unlink");
+    // NOT_YET_IMPLEMENTED("VFS: do_unlink");
+    
     return -1;
 }
 
