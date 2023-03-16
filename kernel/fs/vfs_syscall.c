@@ -486,8 +486,55 @@ long do_link(const char *oldpath, const char *newpath)
  */
 long do_rename(const char *oldpath, const char *newpath)
 {
-    NOT_YET_IMPLEMENTED("VFS: do_rename");
-    return -1;
+    // NOT_YET_IMPLEMENTED("VFS: do_rename");
+    vnode_t *base = curproc->p_cwd;
+    vref(base);
+
+    // get olddir node and error check
+    const char* oldbasename;
+    size_t oldbasenamelen;
+    vnode_t *olddir_vnode;
+    long ret = namev_dir(base, newpath, &olddir_vnode, &oldbasename, &oldbasenamelen);
+    if (ret) {
+        vput(&base);
+        return ret;
+    }
+    if (oldbasenamelen > NAME_LEN) {
+        vput(&base);
+        vput(&olddir_vnode);
+        return -ENAMETOOLONG;
+    }
+
+    // get newdir node and error check
+    const char* newbasename;
+    size_t newbasenamelen;
+    vnode_t *newdir_vnode;
+    ret = namev_dir(base, newpath, &newdir_vnode, &newbasename, &newbasenamelen);
+    vput(&base);
+    if (ret) {
+        vput(&olddir_vnode);
+        return ret;
+    }
+    if (newbasenamelen > NAME_LEN) {
+        vput(&olddir_vnode);
+        vput(&newdir_vnode);
+        return -ENAMETOOLONG;
+    }
+
+    // lock vnode_rename_mutex and lock olddir and newdir in order
+    kmutex_lock(&base->vn_fs->vnode_rename_mutex);
+    vlock_in_order(olddir_vnode, newdir_vnode);
+
+    ret = olddir_vnode->vn_ops->rename(olddir_vnode, oldbasename, oldbasenamelen, newdir_vnode, newbasename, newbasenamelen);
+
+    // unlock olddir and newdir in order and unlock vnode_rename_mutex
+    vunlock_in_order(olddir_vnode, newdir_vnode);
+    kmutex_unlock(&base->vn_fs->vnode_rename_mutex);
+
+    vput(&olddir_vnode);
+    vput(&newdir_vnode);
+
+    return ret;
 }
 
 /* Set the current working directory to the directory represented by path.
