@@ -60,7 +60,7 @@ long get_empty_fd(int *fd)
  * If a vnode represents a chardev or blockdev, then the appropriate field of
  * the vnode->vn_dev union will point to the device. Otherwise, the union will be NULL.
  */
-long op(const char *filename, int oflags)
+long do_open(const char *filename, int oflags)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_open");
 
