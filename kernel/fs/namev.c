@@ -276,7 +276,7 @@ long namev_open(vnode_t *base, const char *path, int oflags, int mode,
     const char* basename;
     size_t basenamelen;
     long ret = namev_dir(base, path, res_vnode, &basename, &basenamelen);
-    if (ret) {
+    if (ret && ret != -ENOENT) {
         return ret;
     }
     if (basenamelen > NAME_LEN) {
@@ -290,7 +290,7 @@ long namev_open(vnode_t *base, const char *path, int oflags, int mode,
     // error check lookup
     if (ret) {
         // try creating the file
-        if (doCreat) {
+        if (doCreat && ret == -ENOENT) {
             // basename[basenamelen] = '\0';
             ret = basedir->vn_ops->mknod(basedir, basename, basenamelen, mode, devid, res_vnode);
             vput_locked(&basedir);

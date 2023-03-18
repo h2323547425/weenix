@@ -160,13 +160,14 @@ static void make_devices()
  */
 static void *initproc_run(long arg1, void *arg2)
 {
-    proctest_main(arg1, arg2);
-    driverstest_main(arg1, arg2);
+    //proctest_main(arg1, arg2);
+    //driverstest_main(arg1, arg2);
 
 #ifdef __VFS__
     dbg(DBG_INIT, "Initializing VFS...\n");
     vfs_init();
     make_devices();
+    vfstest_main(arg1, arg2);
 #endif
 
     /* To create a kshell on each terminal */
@@ -179,8 +180,6 @@ static void *initproc_run(long arg1, void *arg2)
         kthread_t *thread = kthread_create(proc, kshell_proc_run, i, NULL);
         sched_make_runnable(thread);
     }
-
-    vfstest_main(arg1, arg2);
 #endif
 
 

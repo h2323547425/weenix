@@ -234,7 +234,7 @@ long do_mkdir(const char *path)
 
     long ret = namev_dir(base, path, &res_vnode, &basename, &basenamelen);
     vput(&base);
-    if (ret) {
+    if (ret && ret != -ENOENT) {
         return ret;
     }
     // error check for name too long
@@ -571,7 +571,7 @@ long do_chdir(const char *path)
     vput(&curproc->p_cwd);
     curproc->p_cwd = res_vnode;
 
-    return 0;;
+    return 0;
 }
 
 /*
