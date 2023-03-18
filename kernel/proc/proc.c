@@ -264,7 +264,7 @@ void proc_cleanup(long status)
         for (int fd = 0; fd < NFILES; fd++)
         {
             if (curproc->p_files[fd])
-                fput(proc->p_files + fd);
+                fput(curproc->p_files + fd);
         }
         if (curproc->p_cwd)
         {
