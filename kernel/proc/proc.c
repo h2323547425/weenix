@@ -213,6 +213,17 @@ proc_t *proc_create(const char *name)
     proc->p_pml4 = pt_create();
     sched_queue_init(&proc->p_wait);
 
+#ifdef __VFS__
+    memset(proc->p_files, 0, sizeof(proc->p_files));
+    for (int fd = 0; fd < NFILES; fd++)
+    {
+        if (curproc->p_files[fd]) {
+            fref(curproc->p_files[fd]);
+            memcpy(proc->p_files[fd], curproc->p_files[fd], sizeof(file_t));
+        }
+    }
+#endif
+
     proc->p_cwd = NULL;
 
     if (proc->p_pid == PID_INIT) {
@@ -248,6 +259,19 @@ void proc_cleanup(long status)
     curproc->p_status = status;
 
     if (curproc->p_pid == PID_INIT) {
+
+#ifdef __VFS__
+        for (int fd = 0; fd < NFILES; fd++)
+        {
+            if (proc->p_files[fd])
+                fput(proc->p_files + fd);
+        }
+        if (proc->p_cwd)
+        {
+            vput(&proc->p_cwd);
+        }
+#endif
+
         initproc_finish();
     } else {
         list_iterate(&curproc->p_children, child, proc_t, p_child_link) {

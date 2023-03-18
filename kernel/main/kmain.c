@@ -35,6 +35,7 @@
 #include "test/driverstest.h"
 #include "test/proctest.h"
 #include "test/vmtest.h"
+#include "test/vfstest/vfstest.h"
 
 GDB_DEFINE_HOOK(boot)
 
@@ -176,6 +177,8 @@ static void *initproc_run(long arg1, void *arg2)
         sched_make_runnable(thread);
     }
 #endif
+
+    vfstest_main(arg1, arg2);
 
     int status;
     /* Run kshell commands until each kshell process exits */
