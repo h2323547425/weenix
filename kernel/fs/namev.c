@@ -228,12 +228,10 @@ long namev_dir(vnode_t *base, const char *path, vnode_t **res_vnode,
             vput(&base);
         }
         if (ret) {
-            KASSERT(base->vn_mobj.mo_mutex.km_holder == NULL);
             return ret;
         }
     }
 
-    KASSERT(base->vn_mobj.mo_mutex.km_holder == NULL);
     KASSERT((*res_vnode)->vn_mobj.mo_mutex.km_holder == NULL);
     return 0;
 }

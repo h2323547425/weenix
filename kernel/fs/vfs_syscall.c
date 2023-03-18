@@ -510,12 +510,13 @@ long do_rename(const char *oldpath, const char *newpath)
     size_t newbasenamelen;
     vnode_t *newdir_vnode;
     ret = namev_dir(base, newpath, &newdir_vnode, &newbasename, &newbasenamelen);
-    vput(&base);
     if (ret) {
+        vput(&base);
         vput(&olddir_vnode);
         return ret;
     }
     if (newbasenamelen > NAME_LEN) {
+        vput(&base);
         vput(&olddir_vnode);
         vput(&newdir_vnode);
         return -ENAMETOOLONG;
@@ -531,6 +532,7 @@ long do_rename(const char *oldpath, const char *newpath)
     vunlock_in_order(olddir_vnode, newdir_vnode);
     kmutex_unlock(&base->vn_fs->vnode_rename_mutex);
 
+    vput(&base);
     vput(&olddir_vnode);
     vput(&newdir_vnode);
 
