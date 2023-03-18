@@ -263,12 +263,12 @@ void proc_cleanup(long status)
 #ifdef __VFS__
         for (int fd = 0; fd < NFILES; fd++)
         {
-            if (proc->p_files[fd])
+            if (curproc->p_files[fd])
                 fput(proc->p_files + fd);
         }
-        if (proc->p_cwd)
+        if (curproc->p_cwd)
         {
-            vput(&proc->p_cwd);
+            vput(&curproc->p_cwd);
         }
 #endif
 
