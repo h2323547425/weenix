@@ -213,6 +213,8 @@ proc_t *proc_create(const char *name)
     proc->p_pml4 = pt_create();
     sched_queue_init(&proc->p_wait);
 
+    proc->p_cwd = NULL;
+
 #ifdef __VFS__
     memset(proc->p_files, 0, sizeof(proc->p_files));
     for (int fd = 0; fd < NFILES; fd++)
@@ -222,9 +224,15 @@ proc_t *proc_create(const char *name)
             memcpy(proc->p_files[fd], curproc->p_files[fd], sizeof(file_t));
         }
     }
+
+    if (curproc->p_cwd) {
+        vlock(curproc->p_cwd);
+        proc->p_cwd = curproc->p_cwd;
+        vref(proc->p_cwd);
+        vunlock(curproc->p_cwd);
+    }
 #endif
 
-    proc->p_cwd = NULL;
 
     if (proc->p_pid == PID_INIT) {
         proc_initproc = proc;
