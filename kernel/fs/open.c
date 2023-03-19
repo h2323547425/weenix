@@ -79,9 +79,9 @@ long do_open(const char *filename, int oflags)
     // get the corresponding vnode and error check
     vnode_t *base = curproc->p_cwd;
     vnode_t *res_vnode;
-    vref(base);
+    //vref(base);
     ret = namev_open(base, filename, oflags, S_IFREG, 0, &res_vnode);
-    vput(&base);
+    //vput(&base);
     if (ret) {
         return ret;
     }
@@ -112,6 +112,7 @@ long do_open(const char *filename, int oflags)
 
     // make call to fcreate and error check
     file_t *fRet = fcreate(fd, res_vnode, mode);
+    vput(&res_vnode);
     if (fRet == NULL) {
         return -ENOMEM;
     }
