@@ -677,9 +677,10 @@ long do_stat(const char *path, stat_t *buf)
         return ret;
     }
 
-    vlock(res_vnode);
+    //vlock(res_vnode);
     ret = res_vnode->vn_ops->stat(res_vnode, buf);
-    vunlock(res_vnode);
+    vput(&res_vnode);
+    //vunlock(res_vnode);
     
     return ret;
 }
