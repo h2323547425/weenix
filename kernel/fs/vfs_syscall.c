@@ -193,9 +193,9 @@ long do_mknod(const char *path, int mode, devid_t devid)
 
     vnode_t *base = curproc->p_cwd;
     vnode_t *res_vnode;
-    vref(base);
+    // vref(base);
     long ret = namev_open(base, path, O_CREAT, mode, devid, &res_vnode);
-    vput(&base);
+    // vput(&base);
     vput(&res_vnode);
 
     return ret;
@@ -230,10 +230,10 @@ long do_mkdir(const char *path)
 
     vnode_t *base = curproc->p_cwd;
     vnode_t *res_vnode;
-    vref(base);
+    // vref(base);
 
     long ret = namev_dir(base, path, &res_vnode, &basename, &basenamelen);
-    vput(&base);
+    // vput(&base);
     if (ret) {
         return ret;
     }
@@ -555,12 +555,12 @@ long do_chdir(const char *path)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_chdir");
     vnode_t *base = curproc->p_cwd;
-    vref(base);
+    // vref(base);
 
     // resolve to get the node and error check
     vnode_t *res_vnode;
     long ret = namev_resolve(base, path, &res_vnode);
-    vput(&base);
+    // vput(&base);
     if (ret) {
         return ret;
     }
