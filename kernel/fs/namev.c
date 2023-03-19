@@ -195,7 +195,7 @@ long namev_dir(vnode_t *base, const char *path, vnode_t **res_vnode,
                const char **name, size_t *namelen)
 {
     // NOT_YET_IMPLEMENTED("VFS: namev_dir");
-    
+
     KASSERT(base->vn_mobj.mo_mutex.km_holder == NULL);
 
     if (*path == '\0') {
@@ -208,30 +208,38 @@ long namev_dir(vnode_t *base, const char *path, vnode_t **res_vnode,
     }
 
     vref(base);
-    *res_vnode = base;
     size_t tmp_namelen;
-    while (1) {
-        const char *tmp_name = namev_tokenize(&path, &tmp_namelen);
-        if (tmp_namelen == 0) {
-            // *res_vnode = base;
-            break;
-        }
-        
+    vnode_t *tmp_res_vnode = base;
+    const char *tmp_name = namev_tokenize(&path, &tmp_namelen);
+    while (tmp_namelen) {
         *name = tmp_name;
         *namelen = tmp_namelen;
-        base = *res_vnode;
+        base = tmp_res_vnode;
+        *res_vnode = tmp_res_vnode;
         vlock(base);
         // call to lookup, unlock dir, error check
-        long ret = namev_lookup(base, *name, *namelen, res_vnode);
+        long ret = namev_lookup(base, *name, *namelen, &tmp_res_vnode);
         vunlock(base);
-        if (base != *res_vnode) {
-            vput(&base);
-        }
+        tmp_name = namev_tokenize(&path, &tmp_namelen);
         if (ret) {
+            KASSERT((*res_vnode)->vn_mobj.mo_mutex.km_holder == NULL);
+            if (ret == -ENOENT && !tmp_namelen) {
+                return 0;
+            }
+            vput(&base);
             return ret;
+        } else {
+            if (base != tmp_res_vnode && tmp_namelen) {
+                vput(&base);
+            }
         }
     }
 
+    if (*res_vnode) {
+        *res_vnode = base;
+        vref(base);
+    }
+    vput(&tmp_res_vnode);
     KASSERT((*res_vnode)->vn_mobj.mo_mutex.km_holder == NULL);
     return 0;
 }
@@ -272,9 +280,9 @@ long namev_open(vnode_t *base, const char *path, int oflags, int mode,
 
     // find the base node and error check
     const char* basename;
-    size_t basenamelen;
+    size_t basenamelen = 0;
     long ret = namev_dir(base, path, res_vnode, &basename, &basenamelen);
-    if (ret && ret != -ENOENT) {
+    if (ret) {
         return ret;
     }
     if (basenamelen > NAME_LEN) {
