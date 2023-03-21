@@ -529,9 +529,9 @@ void s5_remove_blocks(s5_node_t *sn)
 {
     // Free the blocks used by the node
     // First, free the the direct blocks
-    s5fs_t* s5fs = VNODE_TO_S5FS(&sn->vnode);
-    s5_inode_t* s5_inode = &sn->inode; 
-    for (unsigned i = 0; i < S5_NDIRECT_BLOCKS; i++) 
+    s5fs_t *s5fs = VNODE_TO_S5FS(&sn->vnode);
+    s5_inode_t *s5_inode = &sn->inode;
+    for (unsigned i = 0; i < S5_NDIRECT_BLOCKS; i++)
     {
         if (s5_inode->s5_direct_blocks[i])
         {

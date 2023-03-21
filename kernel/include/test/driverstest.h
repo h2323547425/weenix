@@ -1,3 +1,3 @@
-#pragma once 
+#pragma once
 
-long driverstest_main(long, void*); 
+long driverstest_main(long, void *);

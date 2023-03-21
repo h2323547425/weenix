@@ -27,16 +27,19 @@
 ssize_t do_read(int fd, void *buf, size_t len)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_read");
-    if (fd < 0 || fd >= NFILES || !(curproc->p_files[fd]) || !(curproc->p_files[fd]->f_mode & FMODE_READ)) {
+    if (fd < 0 || fd >= NFILES || !(curproc->p_files[fd]) || !(curproc->p_files[fd]->f_mode & FMODE_READ))
+    {
         return -EBADF;
     }
     vnode_t *vnode = curproc->p_files[fd]->f_vnode;
-    if (S_ISDIR(vnode->vn_mode)) {
+    if (S_ISDIR(vnode->vn_mode))
+    {
         return -EISDIR;
     }
     vlock(vnode);
     ssize_t ret = vnode->vn_ops->read(vnode, curproc->p_files[fd]->f_pos, buf, len);
-    if (ret < 0) {
+    if (ret < 0)
+    {
         return ret;
     }
     curproc->p_files[fd]->f_pos += ret;
@@ -61,7 +64,8 @@ ssize_t do_read(int fd, void *buf, size_t len)
 ssize_t do_write(int fd, const void *buf, size_t len)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_write");
-    if (fd < 0 || fd >= NFILES || !(curproc->p_files[fd]) || !(curproc->p_files[fd]->f_mode & FMODE_WRITE)) {
+    if (fd < 0 || fd >= NFILES || !(curproc->p_files[fd]) || !(curproc->p_files[fd]->f_mode & FMODE_WRITE))
+    {
         return -EBADF;
     }
     vnode_t *vnode = curproc->p_files[fd]->f_vnode;
@@ -69,11 +73,13 @@ ssize_t do_write(int fd, const void *buf, size_t len)
     //     return -EISDIR;
     // }
     vlock(vnode);
-    if (curproc->p_files[fd]->f_mode & FMODE_APPEND) {
+    if (curproc->p_files[fd]->f_mode & FMODE_APPEND)
+    {
         curproc->p_files[fd]->f_pos = curproc->p_files[fd]->f_vnode->vn_len;
     }
     ssize_t ret = vnode->vn_ops->write(vnode, curproc->p_files[fd]->f_pos, buf, len);
-    if (ret < 0) {
+    if (ret < 0)
+    {
         return ret;
     }
     curproc->p_files[fd]->f_pos += ret;
@@ -95,7 +101,8 @@ ssize_t do_write(int fd, const void *buf, size_t len)
 long do_close(int fd)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_close");
-    if (fd < 0 || fd >= NFILES || !(curproc->p_files[fd])) {
+    if (fd < 0 || fd >= NFILES || !(curproc->p_files[fd]))
+    {
         return -EBADF;
     }
 
@@ -117,13 +124,15 @@ long do_close(int fd)
 long do_dup(int fd)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_dup");
-    if (fd < 0 || fd >= NFILES || !(curproc->p_files[fd])) {
+    if (fd < 0 || fd >= NFILES || !(curproc->p_files[fd]))
+    {
         return -EBADF;
     }
 
     int new_fd;
     long ret = get_empty_fd(&new_fd);
-    if (ret) {
+    if (ret)
+    {
         return ret;
     }
 
@@ -146,20 +155,23 @@ long do_dup(int fd)
 long do_dup2(int ofd, int nfd)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_dup2");
-    if (ofd < 0 || ofd >= NFILES || !(curproc->p_files[ofd]) 
-        || nfd < 0 || nfd >= NFILES) {
+    if (ofd < 0 || ofd >= NFILES || !(curproc->p_files[ofd]) || nfd < 0 || nfd >= NFILES)
+    {
         return -EBADF;
     }
 
-    if (ofd != nfd) {
-        
-        if (curproc->p_files[nfd]) {
+    if (ofd != nfd)
+    {
+
+        if (curproc->p_files[nfd])
+        {
             long ret = do_close(nfd);
-            if (ret) {
+            if (ret)
+            {
                 return ret;
             }
         }
-        
+
         curproc->p_files[ofd]->f_refcount++;
         curproc->p_files[nfd] = curproc->p_files[ofd];
     }
@@ -187,7 +199,8 @@ long do_dup2(int ofd, int nfd)
 long do_mknod(const char *path, int mode, devid_t devid)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_mknod");
-    if (mode != S_IFCHR && mode != S_IFBLK && mode != S_IFREG) {
+    if (mode != S_IFCHR && mode != S_IFBLK && mode != S_IFREG)
+    {
         return -EINVAL;
     }
 
@@ -225,7 +238,7 @@ long do_mkdir(const char *path)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_mkdir");
     // find the base node and error check
-    const char* basename;
+    const char *basename;
     size_t basenamelen = 0;
 
     vnode_t *base = curproc->p_cwd;
@@ -234,11 +247,13 @@ long do_mkdir(const char *path)
 
     long ret = namev_dir(base, path, &res_vnode, &basename, &basenamelen);
     // vput(&base);
-    if (ret) {
+    if (ret)
+    {
         return ret;
     }
     // error check for name too long
-    if (basenamelen > NAME_LEN) {
+    if (basenamelen > NAME_LEN)
+    {
         vput(&res_vnode);
         return -ENAMETOOLONG;
     }
@@ -249,15 +264,18 @@ long do_mkdir(const char *path)
     ret = namev_lookup(basedir, basename, basenamelen, &res_vnode);
 
     // error check lookup
-    if (ret) {
-        if (ret != -ENOENT) {
+    if (ret)
+    {
+        if (ret != -ENOENT)
+        {
             vput_locked(&basedir);
             return ret;
         }
         // try creating the file
         ret = basedir->vn_ops->mkdir(basedir, basename, basenamelen, &res_vnode);
         vput_locked(&basedir);
-        if (!ret) {
+        if (!ret)
+        {
             vput(&res_vnode);
             return 0;
         }
@@ -289,7 +307,7 @@ long do_rmdir(const char *path)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_rmdir");
     // find the base node and error check
-    const char* basename;
+    const char *basename;
     size_t basenamelen = 0;
 
     vnode_t *base = curproc->p_cwd;
@@ -298,20 +316,24 @@ long do_rmdir(const char *path)
 
     long ret = namev_dir(base, path, &res_vnode, &basename, &basenamelen);
     vput(&base);
-    if (ret) {
+    if (ret)
+    {
         return ret;
     }
     // error check for name too long
-    if (basenamelen > NAME_LEN) {
+    if (basenamelen > NAME_LEN)
+    {
         vput(&res_vnode);
         return -ENAMETOOLONG;
     }
     // error check for invalid basename
-    if (!strncmp(basename, ".", 1)) {
+    if (!strncmp(basename, ".", 1))
+    {
         vput(&res_vnode);
         return -EINVAL;
     }
-    if (!strncmp(basename, "..", 2)) {
+    if (!strncmp(basename, "..", 2))
+    {
         vput(&res_vnode);
         return -ENOTEMPTY;
     }
@@ -322,7 +344,8 @@ long do_rmdir(const char *path)
     ret = namev_lookup(basedir, basename, basenamelen, &res_vnode);
 
     // error check lookup
-    if (ret) {
+    if (ret)
+    {
         vput_locked(&basedir);
         return ret;
     }
@@ -349,7 +372,7 @@ long do_unlink(const char *path)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_unlink");
     // find the base node and error check
-    const char* basename;
+    const char *basename;
     size_t basenamelen = 0;
 
     vnode_t *base = curproc->p_cwd;
@@ -358,11 +381,13 @@ long do_unlink(const char *path)
 
     long ret = namev_dir(base, path, &res_vnode, &basename, &basenamelen);
     vput(&base);
-    if (ret) {
+    if (ret)
+    {
         return ret;
     }
     // error check for name too long
-    if (basenamelen > NAME_LEN) {
+    if (basenamelen > NAME_LEN)
+    {
         vput(&res_vnode);
         return -ENAMETOOLONG;
     }
@@ -373,13 +398,15 @@ long do_unlink(const char *path)
     ret = namev_lookup(basedir, basename, basenamelen, &res_vnode);
 
     // error check lookup
-    if (ret) {
+    if (ret)
+    {
         vput_locked(&basedir);
         return ret;
     }
 
     // error check for unlink dir
-    if (S_ISDIR(res_vnode->vn_mode)) {
+    if (S_ISDIR(res_vnode->vn_mode))
+    {
         vput_locked(&basedir);
         vput(&res_vnode);
         return -EPERM;
@@ -416,26 +443,30 @@ long do_link(const char *oldpath, const char *newpath)
     // resolve on old path to get node and error check
     vnode_t *res_vnode;
     long ret = namev_resolve(base, oldpath, &res_vnode);
-    if (ret) {
+    if (ret)
+    {
         vput(&base);
         return ret;
     }
-    if (S_ISDIR(res_vnode->vn_mode)) {
+    if (S_ISDIR(res_vnode->vn_mode))
+    {
         vput(&base);
         vput(&res_vnode);
         return -EPERM;
     }
 
     // get dir node and error check
-    const char* basename;
+    const char *basename;
     size_t basenamelen = 0;
     vnode_t *dir_vnode;
     ret = namev_dir(base, newpath, &dir_vnode, &basename, &basenamelen);
     vput(&base);
-    if (ret) {
+    if (ret)
+    {
         return ret;
     }
-    if (basenamelen > NAME_LEN) {
+    if (basenamelen > NAME_LEN)
+    {
         vput(&dir_vnode);
         return -ENAMETOOLONG;
     }
@@ -491,31 +522,35 @@ long do_rename(const char *oldpath, const char *newpath)
     vref(base);
 
     // get olddir node and error check
-    const char* oldbasename;
+    const char *oldbasename;
     size_t oldbasenamelen = 0;
     vnode_t *olddir_vnode;
     long ret = namev_dir(base, newpath, &olddir_vnode, &oldbasename, &oldbasenamelen);
-    if (ret) {
+    if (ret)
+    {
         vput(&base);
         return ret;
     }
-    if (oldbasenamelen > NAME_LEN) {
+    if (oldbasenamelen > NAME_LEN)
+    {
         vput(&base);
         vput(&olddir_vnode);
         return -ENAMETOOLONG;
     }
 
     // get newdir node and error check
-    const char* newbasename;
+    const char *newbasename;
     size_t newbasenamelen = 0;
     vnode_t *newdir_vnode;
     ret = namev_dir(base, newpath, &newdir_vnode, &newbasename, &newbasenamelen);
-    if (ret) {
+    if (ret)
+    {
         vput(&base);
         vput(&olddir_vnode);
         return ret;
     }
-    if (newbasenamelen > NAME_LEN) {
+    if (newbasenamelen > NAME_LEN)
+    {
         vput(&base);
         vput(&olddir_vnode);
         vput(&newdir_vnode);
@@ -561,10 +596,12 @@ long do_chdir(const char *path)
     vnode_t *res_vnode;
     long ret = namev_resolve(base, path, &res_vnode);
     // vput(&base);
-    if (ret) {
+    if (ret)
+    {
         return ret;
     }
-    if (S_ISDIR(res_vnode->vn_mode)) {
+    if (S_ISDIR(res_vnode->vn_mode))
+    {
         vput(&res_vnode);
         return -ENOTDIR;
     }
@@ -593,18 +630,21 @@ long do_chdir(const char *path)
 ssize_t do_getdent(int fd, struct dirent *dirp)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_getdent");
-    if (fd < 0 || fd >= NFILES || !(curproc->p_files[fd])) {
+    if (fd < 0 || fd >= NFILES || !(curproc->p_files[fd]))
+    {
         return -EBADF;
     }
     vnode_t *vnode = curproc->p_files[fd]->f_vnode;
-    if (!S_ISDIR(vnode->vn_mode)) {
+    if (!S_ISDIR(vnode->vn_mode))
+    {
         return -ENOTDIR;
     }
 
     vlock(vnode);
     long ret = vnode->vn_ops->readdir(vnode, curproc->p_files[fd]->f_pos, dirp);
     vunlock(vnode);
-    if (ret < 0) {
+    if (ret < 0)
+    {
         return ret;
     }
     return sizeof(dirent_t);
@@ -625,36 +665,47 @@ ssize_t do_getdent(int fd, struct dirent *dirp)
  */
 off_t do_lseek(int fd, off_t offset, int whence)
 {
-    // NOT_YET_IMPLEMENTED("VFS: do_lseek"); 
-    if (fd < 0 || fd >= NFILES || !(curproc->p_files[fd])) {
+    // NOT_YET_IMPLEMENTED("VFS: do_lseek");
+    if (fd < 0 || fd >= NFILES || !(curproc->p_files[fd]))
+    {
         return -EBADF;
     }
     vnode_t *vnode = curproc->p_files[fd]->f_vnode;
     vlock(vnode);
-    if (whence == SEEK_SET) {
-        if (offset < 0) {
+    if (whence == SEEK_SET)
+    {
+        if (offset < 0)
+        {
             vunlock(vnode);
             return -EINVAL;
         }
         curproc->p_files[fd]->f_pos = offset;
-    } else if (whence == SEEK_CUR) {
-        if ((int) (curproc->p_files[fd]->f_pos) + offset < 0) {
+    }
+    else if (whence == SEEK_CUR)
+    {
+        if ((int)(curproc->p_files[fd]->f_pos) + offset < 0)
+        {
             vunlock(vnode);
             return -EINVAL;
         }
         curproc->p_files[fd]->f_pos += offset;
-    } else if (whence == SEEK_END) {
-        if ((int) (vnode->vn_len) + offset < 0) {
+    }
+    else if (whence == SEEK_END)
+    {
+        if ((int)(vnode->vn_len) + offset < 0)
+        {
             vunlock(vnode);
             return -EINVAL;
         }
         curproc->p_files[fd]->f_pos = vnode->vn_len + offset;
-    } else {
+    }
+    else
+    {
         vunlock(vnode);
         return -EINVAL;
     }
     vunlock(vnode);
-    
+
     return curproc->p_files[fd]->f_pos;
 }
 
@@ -673,7 +724,8 @@ long do_stat(const char *path, stat_t *buf)
     vnode_t *res_vnode;
     long ret = namev_resolve(base, path, &res_vnode);
     vput(&base);
-    if (ret) {
+    if (ret)
+    {
         return ret;
     }
 
@@ -681,7 +733,7 @@ long do_stat(const char *path, stat_t *buf)
     ret = res_vnode->vn_ops->stat(res_vnode, buf);
     vput(&res_vnode);
     //vunlock(res_vnode);
-    
+
     return ret;
 }
 

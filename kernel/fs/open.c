@@ -65,14 +65,16 @@ long do_open(const char *filename, int oflags)
     // NOT_YET_IMPLEMENTED("VFS: do_open");
 
     // validate the oflags
-    if (oflags & O_WRONLY && oflags & O_RDWR) {
+    if (oflags & O_WRONLY && oflags & O_RDWR)
+    {
         return -EINVAL;
     }
 
     // get an available fd and error check
     int fd;
     long ret = get_empty_fd(&fd);
-    if (ret) {
+    if (ret)
+    {
         return ret;
     }
 
@@ -82,38 +84,45 @@ long do_open(const char *filename, int oflags)
     //vref(base);
     ret = namev_open(base, filename, oflags, S_IFREG, 0, &res_vnode);
     //vput(&base);
-    if (ret) {
+    if (ret)
+    {
         return ret;
     }
 
     // check for truncate routine, device
-    if (oflags & O_TRUNC && S_ISREG(res_vnode->vn_mode)) {
-        res_vnode->vn_ops->truncate_file(res_vnode);  
+    if (oflags & O_TRUNC && S_ISREG(res_vnode->vn_mode))
+    {
+        res_vnode->vn_ops->truncate_file(res_vnode);
     }
     // if(S_ISBLK(res_vnode->vn_mode)) {
-    //     res_vnode->vn_dev.blockdev = 
+    //     res_vnode->vn_dev.blockdev =
     // }
 
     // convert flag
     int mode = 0;
-    if (oflags & O_RDONLY) {
+    if (oflags & O_RDONLY)
+    {
         mode |= FMODE_READ;
     }
-    if (oflags & O_WRONLY) {
+    if (oflags & O_WRONLY)
+    {
         mode |= FMODE_WRITE;
     }
-    if (oflags & O_RDWR) {
+    if (oflags & O_RDWR)
+    {
         mode |= FMODE_READ;
         mode |= FMODE_WRITE;
     }
-    if (oflags & O_APPEND) {
+    if (oflags & O_APPEND)
+    {
         mode |= FMODE_APPEND;
     }
 
     // make call to fcreate and error check
     file_t *fRet = fcreate(fd, res_vnode, mode);
     vput(&res_vnode);
-    if (fRet == NULL) {
+    if (fRet == NULL)
+    {
         return -ENOMEM;
     }
     return fd;

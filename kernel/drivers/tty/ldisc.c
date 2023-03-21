@@ -38,9 +38,11 @@ void ldisc_init(ldisc_t *ldisc)
  */
 long ldisc_wait_read(ldisc_t *ldisc, spinlock_t *lock)
 {
-    while (!ldisc->ldisc_full && ldisc->ldisc_cooked == ldisc->ldisc_tail) {
+    while (!ldisc->ldisc_full && ldisc->ldisc_cooked == ldisc->ldisc_tail)
+    {
         int ret = sched_cancellable_sleep_on(&ldisc->ldisc_read_queue, lock);
-        if (ret) {
+        if (ret)
+        {
             return ret;
         }
     }
@@ -65,20 +67,24 @@ long ldisc_wait_read(ldisc_t *ldisc, spinlock_t *lock)
 size_t ldisc_read(ldisc_t *ldisc, char *buf, size_t count)
 {
     int read_count = 0;
-    for (size_t i = 0; i < count; i++) {
+    for (size_t i = 0; i < count; i++)
+    {
         // break if no cooked char
-        if (ldisc->ldisc_tail == ldisc->ldisc_cooked && !ldisc->ldisc_full) {
+        if (ldisc->ldisc_tail == ldisc->ldisc_cooked && !ldisc->ldisc_full)
+        {
             break;
         }
         // get the cooked char and increment tail
         char c = ldisc->ldisc_buffer[ldisc->ldisc_tail];
         ldisc->ldisc_tail = (ldisc->ldisc_tail + 1) % LDISC_BUFFER_SIZE;
         // if char is EOT, stop copying and break
-        if (c == EOT) {
+        if (c == EOT)
+        {
             break;
         }
         // if char is \n, stop copying, and break
-        if (c == '\n') {
+        if (c == '\n')
+        {
             break;
         }
         // otherwise, increment read_count and copy char
@@ -136,12 +142,14 @@ size_t ldisc_read(ldisc_t *ldisc, char *buf, size_t count)
 void ldisc_key_pressed(ldisc_t *ldisc, char c)
 {
     tty_t *tty = ldisc_to_tty(ldisc);
-    if (c == ETX) {
+    if (c == ETX)
+    {
         // delete raw
         ldisc->ldisc_head = ldisc->ldisc_cooked;
         // zero out cooked
         size_t i = ldisc->ldisc_tail;
-        while (i != ldisc->ldisc_cooked) {
+        while (i != ldisc->ldisc_cooked)
+        {
             ldisc->ldisc_buffer[i] = 0;
             i = (i + 1) % LDISC_BUFFER_SIZE;
         }
@@ -149,13 +157,16 @@ void ldisc_key_pressed(ldisc_t *ldisc, char c)
         vterminal_write(&tty->tty_vterminal, "\n", 1);
         return;
     }
-    if (c == EOT) {
-        if (!ldisc->ldisc_full) {
+    if (c == EOT)
+    {
+        if (!ldisc->ldisc_full)
+        {
             // write EOT and increment head
             ldisc->ldisc_buffer[ldisc->ldisc_head] = EOT;
             ldisc->ldisc_head = (ldisc->ldisc_head + 1) % LDISC_BUFFER_SIZE;
             // check full
-            if (ldisc->ldisc_head == ldisc->ldisc_tail) {
+            if (ldisc->ldisc_head == ldisc->ldisc_tail)
+            {
                 ldisc->ldisc_full = 1;
             }
             // cook all
@@ -165,13 +176,16 @@ void ldisc_key_pressed(ldisc_t *ldisc, char c)
         }
         return;
     }
-    if (c == '\n') {
-        if (!ldisc->ldisc_full) {
+    if (c == '\n')
+    {
+        if (!ldisc->ldisc_full)
+        {
             // write \n and increment head
             ldisc->ldisc_buffer[ldisc->ldisc_head] = '\n';
             ldisc->ldisc_head = (ldisc->ldisc_head + 1) % LDISC_BUFFER_SIZE;
             // check full
-            if (ldisc->ldisc_head == ldisc->ldisc_tail) {
+            if (ldisc->ldisc_head == ldisc->ldisc_tail)
+            {
                 ldisc->ldisc_full = 1;
             }
             // cook all
@@ -183,8 +197,10 @@ void ldisc_key_pressed(ldisc_t *ldisc, char c)
         }
         return;
     }
-    if (c == '\b') {
-        if (ldisc->ldisc_cooked != ldisc->ldisc_head) {
+    if (c == '\b')
+    {
+        if (ldisc->ldisc_cooked != ldisc->ldisc_head)
+        {
             // delete 1 char by decrementing head
             ldisc->ldisc_head = (ldisc->ldisc_head - 1) % LDISC_BUFFER_SIZE;
             // emit \b to terminal
@@ -193,7 +209,8 @@ void ldisc_key_pressed(ldisc_t *ldisc, char c)
         return;
     }
     // do nothing when almost full with regular char
-    if (ldisc->ldisc_full || (ldisc->ldisc_head + 1) % LDISC_BUFFER_SIZE == ldisc->ldisc_tail) {
+    if (ldisc->ldisc_full || (ldisc->ldisc_head + 1) % LDISC_BUFFER_SIZE == ldisc->ldisc_tail)
+    {
         return;
     }
     // otherwise write char and increment head
@@ -213,7 +230,8 @@ size_t ldisc_get_current_line_raw(ldisc_t *ldisc, char *s)
 {
     int read_count = 0;
     size_t i = ldisc->ldisc_cooked;
-    while(i != ldisc->ldisc_head) {
+    while (i != ldisc->ldisc_head)
+    {
         s[read_count++] = ldisc->ldisc_buffer[i];
         i = (i + 1) % LDISC_BUFFER_SIZE;
     }

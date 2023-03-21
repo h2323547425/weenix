@@ -7,7 +7,7 @@
 #include "util/string.h"
 
 /* for debugging/verification purposes */
-int anon_count = 0; 
+int anon_count = 0;
 
 static slab_allocator_t *anon_allocator;
 

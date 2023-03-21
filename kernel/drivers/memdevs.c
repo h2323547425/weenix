@@ -101,8 +101,9 @@ static ssize_t null_write(chardev_t *dev, size_t pos, const void *buf,
  */
 static ssize_t zero_read(chardev_t *dev, size_t pos, void *buf, size_t count)
 {
-    char *char_buf = (char *) buf;
-    for (size_t i = 0; i < count; i++) {
+    char *char_buf = (char *)buf;
+    for (size_t i = 0; i < count; i++)
+    {
         char_buf[i] = 0;
     }
     return count;

@@ -55,7 +55,7 @@ long vmmap_remove(vmmap_t *map, size_t lopage, size_t npages);
 
 long vmmap_is_range_empty(vmmap_t *map, size_t startvfn, size_t npages);
 
-void vmmap_insert(vmmap_t *map, vmarea_t *new_vma); 
+void vmmap_insert(vmmap_t *map, vmarea_t *new_vma);
 
 ssize_t vmmap_find_range(vmmap_t *map, size_t npages, int dir);
 

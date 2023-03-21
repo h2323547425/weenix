@@ -182,11 +182,10 @@ static void *initproc_run(long arg1, void *arg2)
     }
 #endif
 
-
     int status;
     /* Run kshell commands until each kshell process exits */
     while (do_waitpid(-1, &status, 0) != -ECHILD)
-            ;
+        ;
 
     return NULL;
 }
@@ -205,11 +204,10 @@ static void *initproc_run(long arg1, void *arg2)
  */
 void initproc_start()
 {
-    proc_t *init_proc = proc_create("init"+curcore.kc_id);
+    proc_t *init_proc = proc_create("init" + curcore.kc_id);
     kthread_t *thr = kthread_create(init_proc, initproc_run, 0, NULL);
     sched_make_runnable(thr);
     context_make_active(&curcore.kc_ctx);
-
 }
 
 void initproc_finish()

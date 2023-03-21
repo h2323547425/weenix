@@ -76,7 +76,8 @@ ssize_t tty_read(chardev_t *cdev, size_t pos, void *buf, size_t count)
     tty_t *tty = cd_to_tty(cdev);
     kmutex_lock(&tty->tty_read_mutex);
     int ret = ldisc_wait_read(&tty->tty_ldisc, &tty->tty_lock);
-    if (ret) {
+    if (ret)
+    {
         return ret;
     }
     int read_count = ldisc_read(&tty->tty_ldisc, buf, count);

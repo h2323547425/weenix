@@ -51,9 +51,9 @@ typedef struct ldisc
     size_t ldisc_head;   // Head is the index from which new characters are placed
     char ldisc_full;     // Full identifies if the buffer is full
                          // 1 -> full
-                         // 0 -> not full  
+                         // 0 -> not full
 
-    ktqueue_t ldisc_read_queue; // Queue for threads waiting for data to be read 
+    ktqueue_t ldisc_read_queue; // Queue for threads waiting for data to be read
     char ldisc_buffer[LDISC_BUFFER_SIZE];
 } ldisc_t;
 

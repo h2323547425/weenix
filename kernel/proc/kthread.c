@@ -68,11 +68,13 @@ void kthread_init()
 kthread_t *kthread_create(proc_t *proc, kthread_func_t func, long arg1,
                           void *arg2)
 {
-    kthread_t *new_thr = (kthread_t *) slab_obj_alloc(kthread_allocator);
-    if (new_thr == NULL) {
+    kthread_t *new_thr = (kthread_t *)slab_obj_alloc(kthread_allocator);
+    if (new_thr == NULL)
+    {
         return NULL;
     }
-    if ((new_thr->kt_kstack = alloc_stack()) == NULL) {
+    if ((new_thr->kt_kstack = alloc_stack()) == NULL)
+    {
         return NULL;
     }
     context_setup(&new_thr->kt_ctx, func, arg1, arg2, new_thr->kt_kstack, DEFAULT_STACK_SIZE, proc->p_pml4);

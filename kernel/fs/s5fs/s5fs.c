@@ -549,16 +549,16 @@ static void s5fs_truncate_file(vnode_t *file)
 {
     KASSERT(S_ISREG(file->vn_mode) && "This routine should only be called for regular files");
     file->vn_len = 0;
-    s5_node_t* s5_node = VNODE_TO_S5NODE(file); 
-    s5_inode_t* s5_inode = &s5_node->inode; 
-    // setting the size of the inode to be 0 as well 
-    s5_inode->s5_un.s5_size = 0; 
-    s5_node->dirtied_inode = 1; 
-    
-    // Call subroutine to free the blocks that were used 
-    vlock(file); 
-    s5_remove_blocks(s5_node);  
-    vunlock(file); 
+    s5_node_t *s5_node = VNODE_TO_S5NODE(file);
+    s5_inode_t *s5_inode = &s5_node->inode;
+    // setting the size of the inode to be 0 as well
+    s5_inode->s5_un.s5_size = 0;
+    s5_node->dirtied_inode = 1;
+
+    // Call subroutine to free the blocks that were used
+    vlock(file);
+    s5_remove_blocks(s5_node);
+    vunlock(file);
 }
 
 /*
