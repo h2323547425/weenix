@@ -213,6 +213,7 @@ long namev_dir(vnode_t *base, const char *path, vnode_t **res_vnode,
     vref(base);
     size_t tmp_namelen;
     vnode_t *tmp_res_vnode = base;
+    *res_vnode = base;
     const char *tmp_name = namev_tokenize(&path, &tmp_namelen);
     while (tmp_namelen)
     {
@@ -244,11 +245,6 @@ long namev_dir(vnode_t *base, const char *path, vnode_t **res_vnode,
         }
     }
 
-    if (*res_vnode)
-    {
-        *res_vnode = base;
-        vref(base);
-    }
     vput(&tmp_res_vnode);
     KASSERT((*res_vnode)->vn_mobj.mo_mutex.km_holder == NULL);
     return 0;
