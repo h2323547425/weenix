@@ -40,6 +40,7 @@ ssize_t do_read(int fd, void *buf, size_t len)
     ssize_t ret = vnode->vn_ops->read(vnode, curproc->p_files[fd]->f_pos, buf, len);
     if (ret < 0)
     {
+        vunlock(vnode);
         return ret;
     }
     curproc->p_files[fd]->f_pos += ret;
@@ -80,6 +81,7 @@ ssize_t do_write(int fd, const void *buf, size_t len)
     ssize_t ret = vnode->vn_ops->write(vnode, curproc->p_files[fd]->f_pos, buf, len);
     if (ret < 0)
     {
+        vunlock(vnode);
         return ret;
     }
     curproc->p_files[fd]->f_pos += ret;
