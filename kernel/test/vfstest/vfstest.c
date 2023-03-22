@@ -1155,10 +1155,10 @@ int vfstest_main(int argc, char **argv)
     vfstest_paths();
     vfstest_fd();
     vfstest_open();
-    // vfstest_read();
-    // vfstest_getdents();
-    // vfstest_memdev();
-    // vfstest_write();
+    vfstest_read();
+    vfstest_getdents();
+    vfstest_memdev();
+    vfstest_write();
 
 #ifdef __VM__
     vfstest_s5fs_vm();

@@ -319,6 +319,10 @@ long namev_open(vnode_t *base, const char *path, int oflags, int mode,
         return ret;
     }
     vput_locked(&basedir);
+    if (S_ISREG((*res_vnode)->vn_mode) && isDir) {
+        vput(res_vnode);
+        return -ENOTDIR;
+    }
     return 0;
 }
 

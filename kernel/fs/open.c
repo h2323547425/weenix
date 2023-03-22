@@ -105,7 +105,7 @@ long do_open(const char *filename, int oflags)
 
     // convert flag
     int mode = 0;
-    if (oflags & O_RDONLY)
+    if (oflags == O_RDONLY)
     {
         mode |= FMODE_READ;
     }
