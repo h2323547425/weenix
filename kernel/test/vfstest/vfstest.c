@@ -1146,15 +1146,15 @@ int vfstest_main(int argc, char **argv)
     test_init();
     vfstest_start();
 
-    // syscall_success(chdir(root_dir));
+    syscall_success(chdir(root_dir));
 
-    // vfstest_notdir();
-    // vfstest_stat();
-    // vfstest_chdir();
-    // vfstest_mkdir();
-    // vfstest_paths();
-    // vfstest_fd();
-    // vfstest_open();
+    vfstest_notdir();
+    vfstest_stat();
+    vfstest_chdir();
+    vfstest_mkdir();
+    vfstest_paths();
+    vfstest_fd();
+    vfstest_open();
     // vfstest_read();
     // vfstest_getdents();
     // vfstest_memdev();
@@ -1164,7 +1164,7 @@ int vfstest_main(int argc, char **argv)
     vfstest_s5fs_vm();
 #endif
 
-    // syscall_success(chdir(".."));
+    syscall_success(chdir(".."));
 
     vfstest_term();
     test_fini();

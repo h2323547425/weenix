@@ -314,10 +314,10 @@ long do_rmdir(const char *path)
 
     vnode_t *base = curproc->p_cwd;
     vnode_t *res_vnode;
-    vref(base);
+    // vref(base);
 
     long ret = namev_dir(base, path, &res_vnode, &basename, &basenamelen);
-    vput(&base);
+    // vput(&base);
     if (ret)
     {
         return ret;
@@ -339,18 +339,18 @@ long do_rmdir(const char *path)
         vput(&res_vnode);
         return -EINVAL;
     }
-
     // lookup the target node
     vnode_t *basedir = res_vnode;
     vlock(basedir);
-    ret = namev_lookup(basedir, basename, basenamelen, &res_vnode);
+    // ret = namev_lookup(basedir, basename, basenamelen, &res_vnode);
+    // vunlock(basedir);
 
     // error check lookup
-    if (ret)
-    {
-        vput_locked(&basedir);
-        return ret;
-    }
+    // if (ret)
+    // {
+    //     vput_locked(&basedir);
+    //     return ret;
+    // }
 
     // call vnode rmdir operation
     ret = basedir->vn_ops->rmdir(basedir, basename, basenamelen);
@@ -641,26 +641,49 @@ long do_chdir(const char *path)
 ssize_t do_getdent(int fd, struct dirent *dirp)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_getdent");
-    if (fd < 0 || fd >= NFILES || !(curproc->p_files[fd]))
-    {
+
+    file_t *file = fget(fd);
+    if (!file) {
         return -EBADF;
     }
-    vnode_t *vnode = curproc->p_files[fd]->f_vnode;
-    if (!S_ISDIR(vnode->vn_mode))
+    if (!S_ISDIR(file->f_vnode->vn_mode))
     {
+        fput(&file);
         return -ENOTDIR;
     }
 
-    vlock(vnode);
-    long ret = vnode->vn_ops->readdir(vnode, curproc->p_files[fd]->f_pos, dirp);
-    if (ret < 0)
+    vlock(file->f_vnode);
+    long ret = file->f_vnode->vn_ops->readdir(file->f_vnode, file->f_pos, dirp);
+    vunlock(file->f_vnode);
+    if (ret <= 0)
     {
-        vunlock(vnode);
+        fput(&file);
         return ret;
     }
-    curproc->p_files[fd]->f_pos += ret;
-    vunlock(vnode);
+    file->f_pos += ret;
+    fput(&file);
     return sizeof(dirent_t);
+
+    // if (fd < 0 || fd >= NFILES || !(curproc->p_files[fd]))
+    // {
+    //     return -EBADF;
+    // }
+    // vnode_t *vnode = curproc->p_files[fd]->f_vnode;
+    // if (!S_ISDIR(vnode->vn_mode))
+    // {
+    //     return -ENOTDIR;
+    // }
+
+    // vlock(vnode);
+    // long ret = vnode->vn_ops->readdir(vnode, curproc->p_files[fd]->f_pos, dirp);
+    // if (ret < 0)
+    // {
+    //     vunlock(vnode);
+    //     return ret;
+    // }
+    // curproc->p_files[fd]->f_pos += ret;
+    // vunlock(vnode);
+    // return sizeof(dirent_t);
 }
 
 /*

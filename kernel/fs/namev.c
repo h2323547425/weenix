@@ -244,8 +244,9 @@ long namev_dir(vnode_t *base, const char *path, vnode_t **res_vnode,
             }
         }
     }
-
-    vput(&tmp_res_vnode);
+    if (tmp_res_vnode != base) {
+        vput(&tmp_res_vnode);
+    }
     KASSERT((*res_vnode)->vn_mobj.mo_mutex.km_holder == NULL);
     return 0;
 }

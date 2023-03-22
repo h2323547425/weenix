@@ -89,6 +89,11 @@ long do_open(const char *filename, int oflags)
         return ret;
     }
 
+    if ((oflags & O_WRONLY || oflags & O_RDWR) && S_ISDIR(res_vnode->vn_mode)) {
+        vput(&res_vnode);
+        return -EISDIR;
+    }
+
     // check for truncate routine, device
     if (oflags & O_TRUNC && S_ISREG(res_vnode->vn_mode))
     {
