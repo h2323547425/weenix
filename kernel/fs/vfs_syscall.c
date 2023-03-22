@@ -329,15 +329,15 @@ long do_rmdir(const char *path)
         return -ENAMETOOLONG;
     }
     // error check for invalid basename
-    if (!strncmp(basename, ".", 1))
-    {
-        vput(&res_vnode);
-        return -EINVAL;
-    }
-    if (!strncmp(basename, "..", 2))
+    if (!strcmp(basename, ".."))
     {
         vput(&res_vnode);
         return -ENOTEMPTY;
+    }
+    if (!strcmp(basename, "."))
+    {
+        vput(&res_vnode);
+        return -EINVAL;
     }
 
     // lookup the target node
@@ -521,23 +521,27 @@ long do_rename(const char *oldpath, const char *newpath)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_rename");
     vnode_t *base = curproc->p_cwd;
-    vref(base);
+    // vref(base);
 
     // get olddir node and error check
     const char *oldbasename;
     size_t oldbasenamelen = 0;
     vnode_t *olddir_vnode;
-    long ret = namev_dir(base, newpath, &olddir_vnode, &oldbasename, &oldbasenamelen);
+    long ret = namev_dir(base, oldpath, &olddir_vnode, &oldbasename, &oldbasenamelen);
     if (ret)
     {
-        vput(&base);
+        // vput(&base);
         return ret;
     }
     if (oldbasenamelen > NAME_LEN)
     {
-        vput(&base);
+        // vput(&base);
         vput(&olddir_vnode);
         return -ENAMETOOLONG;
+    }
+    if (!S_ISDIR(olddir_vnode->vn_mode)) {
+        vput(&olddir_vnode);
+        return -ENOTDIR;
     }
 
     // get newdir node and error check
@@ -547,29 +551,34 @@ long do_rename(const char *oldpath, const char *newpath)
     ret = namev_dir(base, newpath, &newdir_vnode, &newbasename, &newbasenamelen);
     if (ret)
     {
-        vput(&base);
+        // vput(&base);
         vput(&olddir_vnode);
         return ret;
     }
     if (newbasenamelen > NAME_LEN)
     {
-        vput(&base);
+        // vput(&base);
         vput(&olddir_vnode);
         vput(&newdir_vnode);
         return -ENAMETOOLONG;
     }
+    if (!S_ISDIR(newdir_vnode->vn_mode)) {
+        vput(&olddir_vnode);
+        vput(&newdir_vnode);
+        return -ENOTDIR;
+    }
 
     // lock vnode_rename_mutex and lock olddir and newdir in order
-    kmutex_lock(&base->vn_fs->vnode_rename_mutex);
+    // kmutex_lock(&base->vn_fs->vnode_rename_mutex);
     vlock_in_order(olddir_vnode, newdir_vnode);
 
     ret = olddir_vnode->vn_ops->rename(olddir_vnode, oldbasename, oldbasenamelen, newdir_vnode, newbasename, newbasenamelen);
 
     // unlock olddir and newdir in order and unlock vnode_rename_mutex
     vunlock_in_order(olddir_vnode, newdir_vnode);
-    kmutex_unlock(&base->vn_fs->vnode_rename_mutex);
+    // kmutex_unlock(&base->vn_fs->vnode_rename_mutex);
 
-    vput(&base);
+    // vput(&base);
     vput(&olddir_vnode);
     vput(&newdir_vnode);
 
@@ -602,7 +611,7 @@ long do_chdir(const char *path)
     {
         return ret;
     }
-    if (S_ISDIR(res_vnode->vn_mode))
+    if (!S_ISDIR(res_vnode->vn_mode))
     {
         vput(&res_vnode);
         return -ENOTDIR;
@@ -644,11 +653,13 @@ ssize_t do_getdent(int fd, struct dirent *dirp)
 
     vlock(vnode);
     long ret = vnode->vn_ops->readdir(vnode, curproc->p_files[fd]->f_pos, dirp);
-    vunlock(vnode);
     if (ret < 0)
     {
+        vunlock(vnode);
         return ret;
     }
+    curproc->p_files[fd]->f_pos += ret;
+    vunlock(vnode);
     return sizeof(dirent_t);
 }
 
@@ -720,12 +731,12 @@ long do_stat(const char *path, stat_t *buf)
 {
     // NOT_YET_IMPLEMENTED("VFS: do_stat");
     vnode_t *base = curproc->p_cwd;
-    vref(base);
+    // vref(base);
 
     // resolve to get the node and error check
     vnode_t *res_vnode;
     long ret = namev_resolve(base, path, &res_vnode);
-    vput(&base);
+    // vput(&base);
     if (ret)
     {
         return ret;

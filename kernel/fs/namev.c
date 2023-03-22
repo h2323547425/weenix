@@ -295,6 +295,7 @@ long namev_open(vnode_t *base, const char *path, int oflags, int mode,
     }
     if (basenamelen > NAME_LEN)
     {
+        vput(res_vnode);
         return -ENAMETOOLONG;
     }
 
