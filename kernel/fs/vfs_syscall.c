@@ -465,11 +465,13 @@ long do_link(const char *oldpath, const char *newpath)
     vput(&base);
     if (ret)
     {
+        vput(&res_vnode);
         return ret;
     }
     if (basenamelen > NAME_LEN)
     {
         vput(&dir_vnode);
+        vput(&res_vnode);
         return -ENAMETOOLONG;
     }
 
