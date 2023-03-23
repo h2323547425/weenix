@@ -238,17 +238,69 @@ long namev_dir(vnode_t *base, const char *path, vnode_t **res_vnode,
         }
         else
         {
-            if (base != tmp_res_vnode && tmp_namelen)
-            {
+            // if (/*base != tmp_res_vnode &&*/ tmp_namelen)
+            // {
+                
+            // }
+            if (!tmp_namelen) {
+                vput(&tmp_res_vnode);
+            } else {
                 vput(&base);
             }
         }
     }
-    if (tmp_res_vnode != base) {
-        vput(&tmp_res_vnode);
-    }
     KASSERT((*res_vnode)->vn_mobj.mo_mutex.km_holder == NULL);
     return 0;
+
+
+    // // error check for empty path
+    // if (*path == '\0') {
+    //     return -EINVAL;
+    // }
+    // // check if path starts with "/", lock and reference base
+    // if (*path == '/') {
+    //     base = vfs_root_fs.fs_root;
+    // }
+
+    // vnode_t *curr = base;
+    // vnode_t *next = base;
+    // *res_vnode = NULL;
+    // long ret;
+    // vref(curr);
+    // while (1) {
+    //     // parse the next token
+    //     size_t tmp_len = 0;
+    //     const char *tmp_name = namev_tokenize(&path, &tmp_len);
+    //     if (tmp_len <= 0) {
+    //         break;
+    //     }
+    //     // if previous lookup failed, return with no net change in ref count
+    //     if (ret == -ENOENT) {
+    //         return ret;
+    //     }
+
+    //     *res_vnode = next;
+    //     *name = tmp_name;
+    //     *namelen = tmp_len;
+    //     curr = next;
+    //     next = NULL;
+    //     // lock and perform lookup
+    //     vlock(curr);
+    //     ret = namev_lookup(curr, tmp_name, tmp_len, &next);
+    //     vunlock(curr);
+    //     // if other error found, return with no net change in ref count
+    //     if (ret && ret != -ENOENT) {
+    //         vput(&curr);
+    //         return ret;
+    //     }
+    //     if (curr != next) {
+    //         vput(&curr);
+    //     }
+    // }
+    // if (!(*res_vnode)) {
+    //     *res_vnode = next;
+    // }
+    // return 0;
 }
 
 /*

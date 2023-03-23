@@ -270,9 +270,6 @@ void proc_cleanup(long status)
     curproc->p_state = PROC_DEAD;
     curproc->p_status = status;
 
-    if (curproc->p_pid == PID_INIT)
-    {
-
 #ifdef __VFS__
         for (int fd = 0; fd < NFILES; fd++)
         {
@@ -285,6 +282,8 @@ void proc_cleanup(long status)
         }
 #endif
 
+    if (curproc->p_pid == PID_INIT)
+    {
         initproc_finish();
     }
     else

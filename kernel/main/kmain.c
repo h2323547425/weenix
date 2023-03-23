@@ -167,6 +167,7 @@ static void *initproc_run(long arg1, void *arg2)
     dbg(DBG_INIT, "Initializing VFS...\n");
     vfs_init();
     make_devices();
+    vfstest_main(1, arg2);
 #endif
 
     /* To create a kshell on each terminal */
