@@ -76,8 +76,6 @@ long namev_is_descendant(vnode_t *a, vnode_t *b)
 long namev_lookup(vnode_t *dir, const char *name, size_t namelen,
                   vnode_t **res_vnode)
 {
-    // NOT_YET_IMPLEMENTED("VFS: namev_lookup");
-
     KASSERT(dir->vn_mobj.mo_mutex.km_holder != NULL);
 
     if (!S_ISDIR(dir->vn_mode) || dir->vn_ops == NULL || dir->vn_ops->lookup == NULL)
@@ -195,8 +193,6 @@ static const char *namev_tokenize(const char **search, size_t *len)
 long namev_dir(vnode_t *base, const char *path, vnode_t **res_vnode,
                const char **name, size_t *namelen)
 {
-    // NOT_YET_IMPLEMENTED("VFS: namev_dir");
-
     KASSERT(base->vn_mobj.mo_mutex.km_holder == NULL);
 
     if (*path == '\0')
@@ -329,7 +325,6 @@ long namev_dir(vnode_t *base, const char *path, vnode_t **res_vnode,
 long namev_open(vnode_t *base, const char *path, int oflags, int mode,
                 devid_t devid, struct vnode **res_vnode)
 {
-    // NOT_YET_IMPLEMENTED("VFS: namev_open");
     int isDir = path[strlen(path) - 1] == '/';
     int doCreat = oflags & O_CREAT;
 

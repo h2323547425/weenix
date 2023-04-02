@@ -62,8 +62,6 @@ long get_empty_fd(int *fd)
  */
 long do_open(const char *filename, int oflags)
 {
-    // NOT_YET_IMPLEMENTED("VFS: do_open");
-
     // validate the oflags
     if (oflags & O_WRONLY && oflags & O_RDWR)
     {
