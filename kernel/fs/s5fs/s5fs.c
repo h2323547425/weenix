@@ -465,8 +465,8 @@ static long s5fs_link(vnode_t *dir, const char *name, size_t namelen,
                       vnode_t *child)
 {
     KASSERT(S_ISDIR(dir->vn_mode) && "should be handled at the VFS level");
-    NOT_YET_IMPLEMENTED("S5FS: s5fs_link");
-    return -1;
+    // NOT_YET_IMPLEMENTED("S5FS: s5fs_link");
+    return s5_link(VNODE_TO_S5NODE(dir), name, namelen, VNODE_TO_S5NODE(child));
 }
 
 /* Remove the directory entry in dir corresponding to name and namelen.
@@ -485,8 +485,15 @@ static long s5fs_unlink(vnode_t *dir, const char *name, size_t namelen)
     KASSERT(S_ISDIR(dir->vn_mode) && "should be handled at the VFS level");
     KASSERT(!name_match(".", name, namelen));
     KASSERT(!name_match("..", name, namelen));
-    NOT_YET_IMPLEMENTED("S5FS: s5fs_unlink");
-    return -1;
+    // NOT_YET_IMPLEMENTED("S5FS: s5fs_unlink");
+    long inum = s5_find_dirent(VNODE_TO_S5NODE(dir), name, namelen, NULL);
+    if (inum < 0) {
+        return inum;
+    }
+    vnode_t *vnode = vget_locked(dir->vn_fs, inum);
+    s5_remove_dirent(VNODE_TO_S5NODE(dir), name, namelen, VNODE_TO_S5NODE(vnode));
+
+    return 0;
 }
 
 /* Change the name or location of a file.
