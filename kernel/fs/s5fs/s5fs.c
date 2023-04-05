@@ -237,10 +237,10 @@ static void s5fs_read_vnode(fs_t *fs, vnode_t *vn)
         break;
     
     default:
-        panic("Invalid s5fs inode type %d.\n", inode->s5_type);
+        panic("s5fs_read_vnode: WARNING: invalid s5fs inode type %d.\n", inode->s5_type);
     }
 
-    s5_release_disk_block(pframe);
+    s5_release_disk_block(&pframe);
 
 }
 
@@ -274,6 +274,8 @@ static void s5fs_delete_vnode(fs_t *fs, vnode_t *vn)
 
         s5_inode_t *old_inode = (s5_inode_t *) (pframe->pf_addr) + S5_INODE_OFFSET(vn->vn_vno);
         memcpy(old_inode, inode, sizeof(s5_inode_t));
+
+        s5_release_disk_block(&pframe);
     }
 }
 
@@ -334,8 +336,8 @@ static void s5fs_sync(fs_t *fs)
 static ssize_t s5fs_read(vnode_t *vnode, size_t pos, void *buf, size_t len)
 {
     KASSERT(!S_ISDIR(vnode->vn_mode) && "should be handled at the VFS level");
-    NOT_YET_IMPLEMENTED("S5FS: s5fs_read");
-    return -1;
+    // NOT_YET_IMPLEMENTED("S5FS: s5fs_read");
+    return s5_read_file(VNODE_TO_S5NODE(vnode), pos, buf, len);
 }
 
 /* Wrapper around s5_write_file. */
@@ -343,8 +345,8 @@ static ssize_t s5fs_write(vnode_t *vnode, size_t pos, const void *buf,
                           size_t len)
 {
     KASSERT(!S_ISDIR(vnode->vn_mode) && "should be handled at the VFS level");
-    NOT_YET_IMPLEMENTED("S5FS: s5fs_write");
-    return -1;
+    // NOT_YET_IMPLEMENTED("S5FS: s5fs_write");
+    return s5_write_file(VNODE_TO_S5NODE(vnode), pos, buf, len);
 }
 
 /*
