@@ -199,7 +199,49 @@ long s5fs_mount(fs_t *fs)
  */
 static void s5fs_read_vnode(fs_t *fs, vnode_t *vn)
 {
-    NOT_YET_IMPLEMENTED("S5FS: s5fs_read_vnode");
+    // NOT_YET_IMPLEMENTED("S5FS: s5fs_read_vnode");
+    s5_node_t *s5_node = VNODE_TO_S5NODE(vn);
+    s5fs_t *s5fs = FS_TO_S5FS(fs);
+
+    pframe_t *pframe;
+    s5_get_disk_block(s5fs, S5_INODE_BLOCK(vn->vn_vno), 0, pframe);
+
+    s5_inode_t *inode = (s5_inode_t *) (pframe->pf_addr) + S5_INODE_OFFSET(vn->vn_vno);
+    s5_node->inode = *inode;
+
+    s5_node->dirtied_inode = 0;
+
+    s5_node->vnode.vn_len = inode->s5_un.s5_size;
+    switch (inode->s5_type)
+    {
+    case S5_TYPE_DATA:
+        s5_node->vnode.vn_mode = S_IFREG;
+        s5_node->vnode.vn_ops = &s5fs_file_vops;
+        break;
+
+    case S5_TYPE_DIR:
+        s5_node->vnode.vn_mode = S_IFDIR;
+        s5_node->vnode.vn_ops = &s5fs_dir_vops;
+        break;
+
+    case S5_TYPE_CHR:
+        s5_node->vnode.vn_mode = S_IFCHR;
+        s5_node->vnode.vn_ops = NULL;
+        s5_node->vnode.vn_devid = inode->s5_indirect_block;
+        break;
+
+    case S5_TYPE_BLK:
+        s5_node->vnode.vn_mode = S_IFBLK;
+        s5_node->vnode.vn_ops = NULL;
+        s5_node->vnode.vn_devid = inode->s5_indirect_block;
+        break;
+    
+    default:
+        panic("Invalid s5fs inode type %d.\n", inode->s5_type);
+    }
+
+    s5_release_disk_block(pframe);
+
 }
 
 /* Clean up the inode corresponding to the given vnode.
