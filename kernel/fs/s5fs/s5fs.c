@@ -490,8 +490,10 @@ static long s5fs_unlink(vnode_t *dir, const char *name, size_t namelen)
     if (inum < 0) {
         return inum;
     }
+
     vnode_t *vnode = vget_locked(dir->vn_fs, inum);
     s5_remove_dirent(VNODE_TO_S5NODE(dir), name, namelen, VNODE_TO_S5NODE(vnode));
+    vput_locked(&vnode);
 
     return 0;
 }
@@ -544,8 +546,42 @@ static long s5fs_rename(vnode_t *olddir, const char *oldname, size_t oldnamelen,
                         vnode_t *newdir, const char *newname,
                         size_t newnamelen)
 {
-    NOT_YET_IMPLEMENTED("S5FS: s5fs_rename");
-    return -1;
+    // NOT_YET_IMPLEMENTED("S5FS: s5fs_rename");
+    if (newnamelen >= NAME_LEN) {
+        return -ENAMETOOLONG;
+    }
+    if (VNODE_TO_S5NODE(newdir)->inode.s5_type != S5_TYPE_DIR) {
+        return -ENOTDIR;
+    }
+
+    long old_inum = s5_find_dirent(VNODE_TO_S5NODE(olddir), oldname, oldnamelen, NULL);
+    if (old_inum < 0) {
+        return old_inum;
+    }
+
+    vnode_t *old_vnode = vget_locked(olddir->vn_fs, old_inum);
+
+    long new_inum = s5_find_dirent(VNODE_TO_S5NODE(newdir), newname, newnamelen, NULL);
+    if (new_inum != -ENOENT) {
+        if (old_inum == new_inum) {
+            vput_locked(&old_vnode);
+            return 0;
+        }
+
+        vnode_t *new_vnode = vget_locked(olddir->vn_fs, new_inum);
+        if (VNODE_TO_S5NODE(new_vnode)->inode.s5_type == S5_TYPE_DIR) {
+            vput_locked(&new_vnode);
+            vput_locked(&old_vnode);
+            return -EISDIR;
+        }
+        
+        s5_remove_dirent(VNODE_TO_S5NODE(newdir), newname, newnamelen, VNODE_TO_S5NODE(new_vnode));
+        vput_locked(&new_vnode);
+    }
+
+    long ret = s5_link(VNODE_TO_S5NODE(newdir), newname, newnamelen, VNODE_TO_S5NODE(old_vnode));
+    vput_locked(&old_vnode);
+    return ret;
 }
 
 /* Create a directory.
