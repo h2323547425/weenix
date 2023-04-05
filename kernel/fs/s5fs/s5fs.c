@@ -257,7 +257,24 @@ static void s5fs_read_vnode(fs_t *fs, vnode_t *vn)
  */
 static void s5fs_delete_vnode(fs_t *fs, vnode_t *vn)
 {
-    NOT_YET_IMPLEMENTED("S5FS: s5fs_delete_vnode");
+    // NOT_YET_IMPLEMENTED("S5FS: s5fs_delete_vnode");
+    s5_node_t *s5_node = VNODE_TO_S5NODE(vn);
+    s5fs_t *s5fs = FS_TO_S5FS(fs);
+
+    s5_inode_t *inode = &s5_node->inode;
+
+    if (!inode->s5_linkcount) {
+        s5_free_inode(s5fs, inode->s5_number);
+        return;
+    }
+    
+    if (s5_node->dirtied_inode) {
+        pframe_t *pframe;
+        s5_get_disk_block(s5fs, S5_INODE_BLOCK(vn->vn_vno), 1, pframe);
+
+        s5_inode_t *old_inode = (s5_inode_t *) (pframe->pf_addr) + S5_INODE_OFFSET(vn->vn_vno);
+        memcpy(old_inode, inode, sizeof(s5_inode_t));
+    }
 }
 
 /*
