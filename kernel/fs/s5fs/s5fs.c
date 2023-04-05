@@ -411,8 +411,8 @@ static long s5fs_mknod(struct vnode *dir, const char *name, size_t namelen,
         return inum;
     }
 
-    vnode_t *vnode = vget(s5fs, inum);
-    long ret = s5_link(dir, name, namelen, VNODE_TO_S5NODE(vnode));
+    vnode_t *vnode = vget(s5fs->s5f_fs, inum);
+    long ret = s5_link(VNODE_TO_S5NODE(dir), name, namelen, VNODE_TO_S5NODE(vnode));
     if (ret) {
         vput(&vnode);
         return ret;
