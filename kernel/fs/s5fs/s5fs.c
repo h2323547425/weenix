@@ -385,8 +385,41 @@ static long s5fs_mknod(struct vnode *dir, const char *name, size_t namelen,
                        int mode, devid_t devid, struct vnode **out)
 {
     KASSERT(S_ISDIR(dir->vn_mode) && "should be handled at the VFS level");
-    NOT_YET_IMPLEMENTED("S5FS: s5fs_mknod");
-    return -1;
+    // NOT_YET_IMPLEMENTED("S5FS: s5fs_mknod");
+    uint16_t type;
+    switch (mode)
+    {
+    case S_IFCHR:
+        type = S5_TYPE_CHR;
+        break;
+
+    case S_IFBLK:
+        type = S5_TYPE_BLK;
+        break;
+
+    case S_IFREG:
+        type = S5_TYPE_DATA;
+        break;
+    
+    default:
+        return -ENOTSUP;
+    }
+
+    s5fs_t *s5fs = VNODE_TO_S5FS(dir);
+    long inum = s5_alloc_inode(s5fs, type, devid);
+    if (inum < 0) {
+        return inum;
+    }
+
+    vnode_t *vnode = vget(s5fs, inum);
+    long ret = s5_link(dir, name, namelen, VNODE_TO_S5NODE(vnode));
+    if (ret) {
+        vput(&vnode);
+        return ret;
+    }
+
+    *out = vnode;
+    return 0;
 }
 
 /* Search for a given entry within a directory.
