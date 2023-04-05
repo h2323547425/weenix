@@ -440,8 +440,20 @@ static long s5fs_mknod(struct vnode *dir, const char *name, size_t namelen,
 long s5fs_lookup(vnode_t *dir, const char *name, size_t namelen,
                  vnode_t **ret)
 {
-    NOT_YET_IMPLEMENTED("S5FS: s5fs_lookup");
-    return -1;
+    // NOT_YET_IMPLEMENTED("S5FS: s5fs_lookup");
+    long inum = s5_find_dirent(VNODE_TO_S5NODE(dir), name, namelen, NULL);
+    if (inum < 0) {
+        return inum;
+    }
+
+    if (dir->vn_vno == inum) {
+        vref(dir);
+        *ret = dir;
+        return 0;
+    }
+    
+    *ret = vget(dir->vn_fs, inum);
+    return 0;
 }
 
 /* Wrapper around s5_link.
