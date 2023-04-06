@@ -612,8 +612,49 @@ static long s5fs_mkdir(vnode_t *dir, const char *name, size_t namelen,
                        struct vnode **out)
 {
     KASSERT(S_ISDIR((dir)->vn_mode) && "should be handled at the VFS level");
-    NOT_YET_IMPLEMENTED("S5FS: s5fs_mkdir");
-    return -1;
+    // NOT_YET_IMPLEMENTED("S5FS: s5fs_mkdir");
+    long inum = s5_alloc_inode(VNODE_TO_S5FS(dir), S5_TYPE_DIR, NULL);
+    if (inum < 0) {
+        return inum;
+    }
+
+    vnode_t *newdir = vget_locked(dir->vn_fs, inum);
+
+    // link the current dir to current dir as "."
+    long ret = s5_link(VNODE_TO_S5NODE(newdir), ".", 1, VNODE_TO_S5NODE(newdir));
+    if (ret) {
+        vput_locked(&newdir);
+        KASSERT(!VNODE_TO_S5NODE(newdir)->inode.s5_linkcount && "linkcount should be 0 on failure");
+        return ret;
+    }
+
+    // link the parent dir to current dir as ".."
+    ret = s5_link(VNODE_TO_S5NODE(newdir), "..", 2, VNODE_TO_S5NODE(dir));
+    if (ret) {
+        // undo link from current dir to current dir
+        s5_remove_dirent(VNODE_TO_S5NODE(newdir), ".", 1, VNODE_TO_S5NODE(newdir));
+        // vput, unlock, and check for linkcount
+        vput_locked(&newdir);
+        KASSERT(!VNODE_TO_S5NODE(newdir)->inode.s5_linkcount && "linkcount should be 0 on failure");
+        return ret;
+    }
+
+    // link the current dir to parent dir
+    ret = s5_link(VNODE_TO_S5NODE(dir), name, namelen, VNODE_TO_S5NODE(newdir));
+    if (ret) {
+        // undo both links
+        s5_remove_dirent(VNODE_TO_S5NODE(newdir), ".", 1, VNODE_TO_S5NODE(newdir));
+        s5_remove_dirent(VNODE_TO_S5NODE(newdir), "..", 2, VNODE_TO_S5NODE(dir));
+        // vput, unlock, and check for linkcount
+        vput_locked(&newdir);
+        KASSERT(!VNODE_TO_S5NODE(newdir)->inode.s5_linkcount && "linkcount should be 0 on failure");
+        return ret;
+    }
+
+    vunlock(&newdir);
+    *out = newdir;
+    KASSERT(VNODE_TO_S5NODE(newdir)->inode.s5_linkcount == 2 && "linkcount should be 2 on success");
+    return 0;
 }
 
 /* Remove a directory.
