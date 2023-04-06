@@ -127,8 +127,41 @@ static inline void s5_release_file_block(pframe_t **pfp)
 long s5_file_block_to_disk_block(s5_node_t *sn, size_t file_blocknum,
                                  int alloc)
 {
-    NOT_YET_IMPLEMENTED("S5FS: s5_file_block_to_disk_block");
-    return -1;
+    // NOT_YET_IMPLEMENTED("S5FS: s5_file_block_to_disk_block");
+    if (file_blocknum >= S5_MAX_FILE_BLOCKS) {
+        return -EINVAL;
+    }
+
+    if (file_blocknum < S5_NDIRECT_BLOCKS) {
+        if (sn->inode.s5_direct_blocks[file_blocknum] || !alloc) {
+            return sn->inode.s5_direct_blocks[file_blocknum];
+        }
+        long new_blocknum = s5_alloc_block(VNODE_TO_S5FS(&sn->vnode));
+        if (new_blocknum < 0) {
+            return new_blocknum;
+        }
+        sn->inode.s5_direct_blocks[file_blocknum] = new_blocknum;
+        sn->dirtied_inode = 1;
+        return new_blocknum;
+    }
+
+    pframe_t *pframe;
+    s5_get_disk_block(VNODE_TO_S5FS(&sn->vnode), sn->inode.s5_indirect_block, 1, &pframe);
+
+    uint32_t *found_block = (uint32_t *) (pframe->pf_addr) + (file_blocknum - S5_NDIRECT_BLOCKS);
+    if (!(*found_block) && alloc) {
+        long new_blocknum = s5_alloc_block(VNODE_TO_S5FS(&sn->vnode));
+        if (new_blocknum < 0) {
+            s5_release_disk_block(&pframe);
+            return new_blocknum;
+        }
+        memcpy(found_block, &new_blocknum, sizeof(uint32_t));
+        s5_release_disk_block(&pframe);
+        return new_blocknum;
+    }
+
+    s5_release_disk_block(&pframe);
+    return *found_block;
 }
 
 /* Read from a file.
