@@ -686,8 +686,8 @@ static long s5fs_rmdir(vnode_t *parent, const char *name, size_t namelen)
     }
 
     vnode_t *dir = vget_locked(parent->vn_fs, inum);
-    KASSERT(VNODE_TO_S5NODE(dir)->inode.s5_un.s5_size >= 2 && "directory missing \".\" or \"..\" entry");
-    if (VNODE_TO_S5NODE(dir)->inode.s5_un.s5_size > 2) {
+    KASSERT(VNODE_TO_S5NODE(dir)->inode.s5_un.s5_size >= sizeof(s5_dirent_t) * 2 && "directory missing \".\" or \"..\" entry");
+    if (VNODE_TO_S5NODE(dir)->inode.s5_un.s5_size > sizeof(s5_dirent_t) * 2) {
         vput_locked(&dir);
         return -ENOTEMPTY;
     }
@@ -719,8 +719,18 @@ static long s5fs_rmdir(vnode_t *parent, const char *name, size_t namelen)
 static long s5fs_readdir(vnode_t *vnode, size_t pos, struct dirent *d)
 {
     KASSERT(S_ISDIR(vnode->vn_mode) && "should be handled at the VFS level");
-    NOT_YET_IMPLEMENTED("S5FS: s5fs_readdir");
-    return -1;
+    // NOT_YET_IMPLEMENTED("S5FS: s5fs_readdir");
+    s5_dirent_t s5_dirent;
+    long ret = s5_read_file(VNODE_TO_S5NODE(vnode), pos, &s5_dirent, sizeof(s5_dirent_t));
+    if (ret < 0) {
+        return ret;
+    }
+    
+    d->d_ino = s5_dirent.s5d_inode;
+    memcpy(d->d_name, s5_dirent.s5d_name, NAME_LEN);
+    d->d_off = pos + sizeof(s5_dirent_t);
+
+    return ret;
 }
 
 /* Get file status.
