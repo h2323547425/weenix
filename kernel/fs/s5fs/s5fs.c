@@ -651,7 +651,7 @@ static long s5fs_mkdir(vnode_t *dir, const char *name, size_t namelen,
         return ret;
     }
 
-    vunlock(&newdir);
+    vunlock(newdir);
     *out = newdir;
     KASSERT(VNODE_TO_S5NODE(newdir)->inode.s5_linkcount == 2 && "linkcount should be 2 on success");
     return 0;
@@ -675,8 +675,29 @@ static long s5fs_rmdir(vnode_t *parent, const char *name, size_t namelen)
     KASSERT(!name_match(".", name, namelen));
     KASSERT(!name_match("..", name, namelen));
     KASSERT(S_ISDIR(parent->vn_mode) && "should be handled at the VFS level");
-    NOT_YET_IMPLEMENTED("S5FS: s5fs_rmdir");
-    return -1;
+    // NOT_YET_IMPLEMENTED("S5FS: s5fs_rmdir");
+    if (VNODE_TO_S5NODE(parent)->inode.s5_type != S5_TYPE_DIR) {
+        return -ENOTDIR;
+    }
+
+    long inum = s5_find_dirent(VNODE_TO_S5NODE(parent), name, namelen, NULL);
+    if (inum < 0) {
+        return inum;
+    }
+
+    vnode_t *dir = vget_locked(parent->vn_fs, inum);
+    KASSERT(VNODE_TO_S5NODE(dir)->inode.s5_un.s5_size >= 2 && "directory missing \".\" or \"..\" entry");
+    if (VNODE_TO_S5NODE(dir)->inode.s5_un.s5_size > 2) {
+        vput_locked(&dir);
+        return -ENOTEMPTY;
+    }
+
+    s5_remove_dirent(VNODE_TO_S5NODE(parent), name, namelen, VNODE_TO_S5NODE(dir));
+    s5_remove_dirent(VNODE_TO_S5NODE(dir), ".", 1, VNODE_TO_S5NODE(dir));
+    s5_remove_dirent(VNODE_TO_S5NODE(dir), "..", 2, VNODE_TO_S5NODE(parent));
+    
+    vput_locked(&dir);
+    return 0;
 }
 
 /* Read a directory entry.
