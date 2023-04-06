@@ -721,11 +721,11 @@ static long s5fs_readdir(vnode_t *vnode, size_t pos, struct dirent *d)
     KASSERT(S_ISDIR(vnode->vn_mode) && "should be handled at the VFS level");
     // NOT_YET_IMPLEMENTED("S5FS: s5fs_readdir");
     s5_dirent_t s5_dirent;
-    long ret = s5_read_file(VNODE_TO_S5NODE(vnode), pos, &s5_dirent, sizeof(s5_dirent_t));
+    long ret = s5_read_file(VNODE_TO_S5NODE(vnode), pos, (char *) &s5_dirent, sizeof(s5_dirent_t));
     if (ret < 0) {
         return ret;
     }
-    
+
     d->d_ino = s5_dirent.s5d_inode;
     memcpy(d->d_name, s5_dirent.s5d_name, NAME_LEN);
     d->d_off = pos + sizeof(s5_dirent_t);
@@ -753,8 +753,44 @@ static long s5fs_readdir(vnode_t *vnode, size_t pos, struct dirent *d)
  */
 static long s5fs_stat(vnode_t *vnode, stat_t *ss)
 {
-    NOT_YET_IMPLEMENTED("S5FS: s5fs_stat");
-    return -1;
+    // NOT_YET_IMPLEMENTED("S5FS: s5fs_stat");
+    s5_node_t *s5_node = VNODE_TO_S5NODE(vnode);
+
+    ss->st_blocks = s5_inode_blocks(s5_node);
+    switch (s5_node->inode.s5_type)
+    {
+    case S5_TYPE_DATA:
+        ss->st_mode = S_IFREG;
+        break;
+
+    case S5_TYPE_DIR:
+        ss->st_mode = S_IFDIR;
+        break;
+
+    case S5_TYPE_CHR:
+        ss->st_mode = S_IFCHR;
+        break;
+
+    case S5_TYPE_BLK:
+        ss->st_mode = S_IFBLK;
+        break;
+    
+    default:
+        panic("s5fs_read_vnode: WARNING: invalid s5fs inode type %d.\n", s5_node->inode.s5_type);
+    }
+    ss->st_rdev = s5_node->inode.s5_indirect_block;
+    ss->st_ino = s5_node->inode.s5_number;
+    ss->st_nlink = s5_node->inode.s5_linkcount;
+    ss->st_blksize = S5_BLOCK_SIZE;
+    ss->st_size = s5_node->inode.s5_un.s5_size;
+    ss->st_dev = VNODE_TO_S5FS(vnode)->s5f_bdev->bd_id;
+    ss->st_uid = NULL;
+    ss->st_gid = NULL;
+    ss->st_atime = NULL;
+    ss->st_mtime = NULL;
+    ss->st_ctime = NULL;
+
+    return 0;
 }
 
 /**
